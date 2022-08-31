@@ -1,0 +1,14 @@
+# compiled objects folder
+.obj/
+
+# libraries
+libs/
+
+# libraries header
+glm/
+SDL2/
+stb/
+vulkan/
+
+# makefile
+makefile
