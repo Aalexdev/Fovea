@@ -10,7 +10,7 @@ namespace Fovea{
 		freeCommandBuffers();
 	}
 
-	void Renderer::initialize(uint32_t sceneVertexBufferSize, uint32_t generalUsageVertexBufferSize){
+	void Renderer::initialize(uint32_t vertexBufferSize){
 		recreateSwapChain();
 		viewport.x = 0.f;
 		viewport.y = 0.f;
@@ -23,24 +23,23 @@ namespace Fovea{
 		scissor.extent = {1, 1};
 
 		createCommandBuffers();
-		createSceneVertexBuffer(sceneVertexBufferSize * 6);
-		createSceneIndexBuffer(sceneVertexBufferSize * 4);
-		createGeneralUsageBuffers(generalUsageVertexBufferSize * 4, generalUsageVertexBufferSize * 6);
+		createVertexBuffer(vertexBufferSize * 4);
+		createIndexBuffer(vertexBufferSize * 6);
 	}
 
-	void Renderer::createSceneVertexBuffer(uint32_t count){
-		sceneVertexBuffer.alloc(sceneVertexSize * count, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
-		sceneVertexBuffer.map();
-		maxSceneVertexSize = sceneVertexBuffer.getBufferSize();
+	void Renderer::createVertexBuffer(uint32_t count){
+		vertexBuffer.alloc(vertexSize * count, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+		vertexBuffer.map();
+		maxVertexSize = vertexBuffer.getBufferSize();
 	}
 
-	void Renderer::setSceneVertexSize(uint32_t size, size_t minOffsetAlignement){
-		sceneVertexBuffer.setInstanceProperties(size, minOffsetAlignement);
-		sceneVertexSize = size;
-		sceneAlignement = sceneVertexBuffer.getAlignmentSize();
+	void Renderer::setVertexSize(uint32_t size, size_t minOffsetAlignement){
+		vertexBuffer.setInstanceProperties(size, minOffsetAlignement);
+		vertexSize = size;
+		alignement = vertexBuffer.getAlignmentSize();
 	}
 
-	void Renderer::createSceneIndexBuffer(uint32_t count){
+	void Renderer::createIndexBuffer(uint32_t count){
 		size_t size = count * sizeof(uint32_t);
 
 		Buffer staginBuffer;
@@ -74,43 +73,6 @@ namespace Fovea{
 		SingleTimeCommand::copyBuffer(staginBuffer.getBuffer(), indexBuffer.getBuffer(), copy);
 	}
 
-	void Renderer::createGeneralUsageBuffers(uint32_t VbufferSize, uint32_t IBufferSize){
-		generalUsageVertexBuffer.alloc(VbufferSize * sizeof(float), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
-		generalUsageVertexBuffer.map();
-		maxGeneralUsageVertexSize = generalUsageVertexBuffer.getBufferSize();
-		
-		Buffer staginBuffer;
-		staginBuffer.alloc(IBufferSize * sizeof(uint32_t), VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
-
-		staginBuffer.map();
-
-		uint32_t* ptr = reinterpret_cast<uint32_t*>(staginBuffer.getMappedMemory());
-
-		uint32_t offset = 0;
-		for (uint32_t i=0; i<IBufferSize; i+=6){
-			ptr[i+0] = offset+0;
-			ptr[i+1] = offset+1;
-			ptr[i+2] = offset+2;
-			ptr[i+3] = offset+2;
-			ptr[i+4] = offset+3;
-			ptr[i+5] = offset+0;
-			offset+=4;
-		}
-
-		staginBuffer.flush();
-		staginBuffer.unmap();
-
-		VkBufferCopy copy;
-		copy.srcOffset = 0;
-		copy.dstOffset = 0;
-		copy.size = IBufferSize * sizeof(uint32_t);
-
-		generalUsageIndexBuffer.alloc(copy.size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-
-		SingleTimeCommand::copyBuffer(staginBuffer.getBuffer(), generalUsageIndexBuffer.getBuffer(), copy);
-	}
-
-
 	VkCommandBuffer Renderer::beginFrame(){
 		if (isWindowMinimized) return VK_NULL_HANDLE;
 		assert(!isFrameStarted && "Can't call beginFrame while already in progress");
@@ -135,10 +97,7 @@ namespace Fovea{
 			throw std::runtime_error("failed to begin recording command buffer!");
 		}
 
-		sceneVertexBufferUsedSize = 0;
-		sceneIndexUsed = 0;
-		generalUsageVertexBufferUsedSize = 0;
-		generalUsageIndexUsed = 0;
+		reset();
 
 		return commandBuffer;
 	}
@@ -282,159 +241,129 @@ namespace Fovea{
 		isWindowMinimized = true;
 	}
 
-	void Renderer::setScene(void* v, uint32_t vertexCount){
-		void* ptr = sceneVertexBuffer.getMappedMemory();
+	void Renderer::set(void* v, uint32_t vertexCount){
+		void* ptr = vertexBuffer.getMappedMemory();
 
-		sceneVertexBufferUsedSize = sceneVertexSize * vertexCount;
-		memcpy(ptr, v, sceneVertexBufferUsedSize);
-		sceneIndexUsed = (vertexCount / 4) * 6;
-		sceneVertexBuffer.flush(sceneAlignement * vertexCount);
+		vertexBufferUsedSize = vertexSize * vertexCount;
+		memcpy(ptr, v, vertexBufferUsedSize);
+		indexUsed = (vertexCount / 4) * 6;
+		vertexBuffer.flush(alignement * vertexCount);
 	}
 
-	void Renderer::renderScene(VkCommandBuffer commandBuffer){
-		if (sceneIndexUsed == 0) return;
+	void Renderer::render(){
+		if (indexUsed == 0) return;
 
-		vkCmdBindIndexBuffer(commandBuffer, indexBuffer.getBuffer(), 0, VK_INDEX_TYPE_UINT32);
-		VkBuffer vertexBuffer = sceneVertexBuffer.getBuffer();
+		vkCmdBindIndexBuffer(getInstance().commandBuffer, indexBuffer.getBuffer(), 0, VK_INDEX_TYPE_UINT32);
+		VkBuffer vertexBuffer = this->vertexBuffer.getBuffer();
 		VkDeviceSize offset = 0;
-		vkCmdBindVertexBuffers(commandBuffer, 0, 1, &vertexBuffer, &offset);
+		vkCmdBindVertexBuffers(getInstance().commandBuffer, 0, 1, &vertexBuffer, &offset);
 
-		vkCmdDrawIndexed(commandBuffer, sceneIndexUsed, 1, 0, 0, 0);
+		vkCmdDrawIndexed(getInstance().commandBuffer, indexUsed, 1, 0, 0, 0);
+		flush();
+		reset();
 	}
 
-	void Renderer::setSceneData(uint32_t offset, uint32_t count, void* data){
-		char* ptr = static_cast<char*>(sceneVertexBuffer.getMappedMemory()) + offset;
-		memcpy(ptr, data, sceneVertexSize * count);
+	void Renderer::setData(uint32_t offset, uint32_t count, void* data){
+		char* ptr = static_cast<char*>(vertexBuffer.getMappedMemory()) + offset;
+		memcpy(ptr, data, vertexSize * count);
 	} 
 
-	void Renderer::flushSceneData(uint32_t offset, uint32_t count){
-		sceneVertexBuffer.flush(sceneAlignement * count, offset);
+	void Renderer::reset(){
+		vertexBufferUsedSize = 0;
+		indexUsed = 0;
 	}
 
-	void Renderer::setGeneralUsageVertexSize(uint32_t size, uint32_t minOffsetAlignement){
-		generalUsageVertexBuffer.setInstanceProperties(size, minOffsetAlignement);
-		generalUsageVertexSize = size;
-		generalUsageAlignement = generalUsageVertexBuffer.getAlignmentSize();
+	void Renderer::flush(){
+		vertexBuffer.flush(alignement * (indexUsed / 6) * 4 );
 	}
 
-	void Renderer::setGeneralUsageData(void* v, uint32_t vertexCount){
-		void* ptr = generalUsageVertexBuffer.getMappedMemory();
-		generalUsageVertexBufferUsedSize = vertexCount * generalUsageVertexSize;
-		memcpy(ptr, v, generalUsageVertexBufferUsedSize);
-		generalUsageIndexUsed = (vertexCount / 4) * 6;
-		generalUsageVertexBuffer.flush(generalUsageAlignement * vertexCount);
+	uint32_t Renderer::getVertexSize(){
+		return vertexSize;
 	}
 
-	void Renderer::renderGeneralUsageData(VkCommandBuffer commandBuffer){
-		if (generalUsageIndexUsed == 0) return;
+	void Renderer::renderQuad(void *v0, void *v1, void *v2, void *v3){
 		
-		VkBuffer vertexBuffer = generalUsageVertexBuffer.getBuffer();
-		VkDeviceSize offset = 0;
-		vkCmdBindVertexBuffers(commandBuffer, 0, 1, &vertexBuffer, &offset);
-
-		if (generalUsageTopology == Topology::Quad){
-			vkCmdBindIndexBuffer(commandBuffer, generalUsageIndexBuffer.getBuffer(), 0, VK_INDEX_TYPE_UINT32);
-			vkCmdDrawIndexed(commandBuffer, generalUsageIndexUsed, 1, 0, 0, 0);
-		} else {
-			vkCmdDraw(commandBuffer, generalUsageVertexBufferUsedSize / generalUsageVertexSize, 1, 0, 0);
+		if (vertexBufferUsedSize + 4 * vertexSize > maxVertexSize){
+			render();
 		}
-	}
 
-	void Renderer::setGeneralUsageTopology(Topology topology){
-		generalUsageTopology = topology;
-	}
+		char* ptr = static_cast<char*>(vertexBuffer.getMappedMemory());
+		ptr += vertexBufferUsedSize;
 
-	void Renderer::setGeneralUsageData(uint32_t offset, uint32_t count, void* data){
-		char* ptr = static_cast<char*>(generalUsageIndexBuffer.getMappedMemory()) + offset;
-		memcpy(ptr, data, generalUsageVertexSize * count);
-	}
+		memcpy(ptr, v0, vertexSize);
+		ptr += vertexSize;
 
-	void Renderer::flushGeneralUsageData(uint32_t offset, uint32_t count){
-		generalUsageIndexBuffer.flush(generalUsageAlignement * count, offset);
-	}
-
-	uint32_t Renderer::getSceneVertexSize(){
-		return sceneVertexSize;
-	}
-
-	uint32_t Renderer::getGeneralUsageVertexSize(){
-		return generalUsageVertexSize;
-	}
-
-	void* Renderer::getSceneBuffer(){
-		return sceneVertexBuffer.getMappedMemory();
-	}
-
-	void* Renderer::getGeneralUsageBuffer(){
-		return generalUsageVertexBuffer.getMappedMemory();
-	}
-
-	void Renderer::renderQuadScene(void *v0, void *v1, void *v2, void *v3){
-		char* ptr = static_cast<char*>(sceneVertexBuffer.getMappedMemory());
-		ptr += sceneVertexBufferUsedSize;
-
-		memcpy(ptr, v0, sceneVertexSize);
-		ptr += sceneVertexSize;
-
-		memcpy(ptr, v1, sceneVertexSize);
-		ptr += sceneVertexSize;
+		memcpy(ptr, v1, vertexSize);
+		ptr += vertexSize;
 		
-		memcpy(ptr, v2, sceneVertexSize);
-		ptr += sceneVertexSize;
+		memcpy(ptr, v2, vertexSize);
+		ptr += vertexSize;
 		
-		memcpy(ptr, v3, sceneVertexSize);
-		ptr += sceneVertexSize;
+		memcpy(ptr, v3, vertexSize);
+		ptr += vertexSize;
 
-		sceneVertexBufferUsedSize += 4 * sceneVertexSize;
-		sceneIndexUsed += 6;
+		vertexBufferUsedSize += 4 * vertexSize;
+		indexUsed += 6;
 	}
 
-	void Renderer::renderGeneralUsageQuad(void *v0, void *v1, void *v2, void *v3){
-		char* ptr = static_cast<char*>(generalUsageVertexBuffer.getMappedMemory());
-		ptr += generalUsageVertexBufferUsedSize;
+	void Renderer::renderTrigone(void *v0, void *v1, void* v2){
 
-		memcpy(ptr, v0, generalUsageVertexSize);
-		ptr += generalUsageVertexSize;
+		if (vertexBufferUsedSize + 3 * vertexSize > maxVertexSize){
+			render();
+		}
 
-		memcpy(ptr, v1, generalUsageVertexSize);
-		ptr += generalUsageVertexSize;
+		char* ptr = static_cast<char*>(vertexBuffer.getMappedMemory());
+		ptr += vertexBufferUsedSize;
+
+		memcpy(ptr, v0, vertexSize);
+		ptr += vertexBufferUsedSize;
+
+		memcpy(ptr, v1, vertexSize);
+		ptr += vertexBufferUsedSize;
 		
-		memcpy(ptr, v2, generalUsageVertexSize);
-		ptr += generalUsageVertexSize;
-		
-		memcpy(ptr, v3, generalUsageVertexSize);
-		ptr += generalUsageVertexSize;
-		
-		generalUsageVertexBufferUsedSize += 4 * generalUsageVertexSize;
-		generalUsageIndexUsed += 6;
-	}
-
-	void Renderer::renderGeneralUsageTrigone(void *v0, void *v1, void* v2){
-		char* ptr = static_cast<char*>(generalUsageVertexBuffer.getMappedMemory());
-		ptr += generalUsageVertexBufferUsedSize;
-
-		memcpy(ptr, v0, generalUsageVertexSize);
-		ptr += generalUsageVertexSize;
-
-		memcpy(ptr, v1, generalUsageVertexSize);
-		ptr += generalUsageVertexSize;
-		
-		memcpy(ptr, v2, generalUsageVertexSize);
-		ptr += generalUsageVertexSize;
+		memcpy(ptr, v2, vertexSize);
+		ptr += vertexBufferUsedSize;
 	
-		generalUsageVertexBufferUsedSize += 3 * generalUsageVertexSize;
+		vertexBufferUsedSize += 3 * vertexBufferUsedSize;
 	}
 
-	void Renderer::renderGeneralUsageLine(void *v0, void *v1){
-		char* ptr = static_cast<char*>(generalUsageVertexBuffer.getMappedMemory());
-		ptr += generalUsageVertexBufferUsedSize;
+	void Renderer::renderLine(void *v0, void *v1){
 
-		memcpy(ptr, v0, generalUsageVertexSize);
-		ptr += generalUsageVertexSize;
+		if (vertexBufferUsedSize + 2 * vertexSize > maxVertexSize){
+			render();
+		}
 
-		memcpy(ptr, v1, generalUsageVertexSize);
-		ptr += generalUsageVertexSize;
+		char* ptr = static_cast<char*>(vertexBuffer.getMappedMemory());
+		ptr += vertexBufferUsedSize;
+
+		memcpy(ptr, v0, vertexSize);
+		ptr += vertexBufferUsedSize;
+
+		memcpy(ptr, v1, vertexSize);
+		ptr += vertexBufferUsedSize;
 		
-		generalUsageVertexBufferUsedSize += 2 * generalUsageVertexSize;
+		vertexBufferUsedSize += 2 * vertexBufferUsedSize;
+	}
+
+	void Renderer::renderPoint(void *v0){
+		char* ptr = static_cast<char*>(vertexBuffer.getMappedMemory());
+		ptr += vertexBufferUsedSize;
+
+		memcpy(ptr, v0, vertexSize);
+		ptr += vertexBufferUsedSize;
+		
+		vertexBufferUsedSize += vertexBufferUsedSize;
+	}
+
+	Renderer::Topology Renderer::getTopology(){
+		return topology;
+	}
+
+	int Renderer::getCurrentFrameIndex(){
+		return currentFrameIndex;
+	}
+
+	VkClearColorValue Renderer::getClearColor(){
+		return clearColor;
 	}
 }

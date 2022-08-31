@@ -217,47 +217,41 @@ void FoveaBeginFrame(void);
 
 void FoveaEndFrame(void);
 
-void FoveaSetScene(void *v, uint32_t vertexCount);
+FoveaBool FoveaIsFrameStarted(void);
 
-void FoveaSetSceneVertexSize(uint32_t size);
+void FoveaSet(void *v, uint32_t vertexCount);
 
-uint32_t FoveaGetSceneVertexSize();
+void FoveaSetVertexSize(uint32_t size);
 
-void* FoveaGetSceneBuffer();
+uint32_t FoveaGetVertexSize();
 
-void FoveaRenderQuadScene(void *v0, void *v1, void *v2, void *v3);
+void FoveaRenderQuad(void *v0, void *v1, void *v2, void *v3);
 
-void FoveaRenderScene(void);
+void FoveaRenderTrigone(void *v0, void *v1, void *v2);
 
-void FoveaSetSceneData(uint32_t offset, uint32_t count, void* data);
+void FoveaRenderLine(void *v0, void *v1);
 
-void FoveaFlushSceneData(uint32_t offset, uint32_t count);
+void FoveaRenderPoint(void *v0);
+
+void FoveaRender(void);
+
+void FoveaSetData(uint32_t offset, uint32_t count, void* data);
+
+void FoveaFlushData(uint32_t offset, uint32_t count);
 
 void FoveaSetGeneralUsageVertexSize(uint32_t size);
 
-uint32_t FoveaGetGeneraUsageVertexSize();
+void FoveaSetTopology(FoveaTopology typology);
 
-void* FoveaGetGeneralUsageBuffer();
-
-void FoveaRenderGeneralUsageQuad(void *v0, void *v1, void *v2, void *v3);
-
-void FoveaRenderGeneralUsageTrigone(void *v0, void *v1, void *v2);
-
-void FoveaRenderGeneralUsageLine(void *v0, void *v1);
-
-void FoveaSetGeneralUsage(void *v, uint32_t vertexCount);
-
-void FoveaSetGeneralUsageData(uint32_t offset, uint32_t count, void *data);
-
-void FoveaFlushGeneralUsageData(uint32_t offset, uint32_t count);
-
-void FoveaRenderGeneralUsageData(void);
-
-void FoveaSetGeneralUsageTopology(FoveaTopology typology);
+FoveaTopology FoveaGetTopology(void);
 
 void FoveaBeginSwapChainRenderPass(void);
 
 void FoveaEndSwapChainRenderPass(void);
+
+int32_t FoveaGetCurrentFrameIndex(void);
+
+FoveaColor FoveaGetWindowClearColor(void);
 
 // =================== shaders ====================
 

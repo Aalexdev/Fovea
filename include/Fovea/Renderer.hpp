@@ -14,7 +14,7 @@ namespace Fovea{
 		public:
 			~Renderer();
 
-			void initialize(uint32_t sceneVertexBufferSize, uint32_t generalUsageVertexBufferSize);
+			void initialize(uint32_t vertexBufferSize);
 
 			VkRenderPass getSwapChainRenderPass() const {return swapChain->getRenderPass();}
 
@@ -56,53 +56,41 @@ namespace Fovea{
 
 			void windowMinimized();
 
-			void setScene(void* v, uint32_t vertexCount);
+			void set(void* v, uint32_t vertexCount);
 
-			void setSceneVertexSize(uint32_t size, size_t minOffsetAlignement);
+			void setVertexSize(uint32_t size, size_t minOffsetAlignement);
 
-			uint32_t getSceneVertexSize();
+			uint32_t getVertexSize();
 
-			void* getSceneBuffer();
+			void render();
 
-			void renderScene(VkCommandBuffer commandBuffer);
+			void setData(uint32_t offset, uint32_t count, void* data);
 
-			void setSceneData(uint32_t offset, uint32_t count, void* data);
+			void setTopology(Topology typology);
 
-			void flushSceneData(uint32_t offset, uint32_t count);
+			void renderQuad(void *v0, void *v1, void *v2, void *v3);
 
-			void setGeneralUsageVertexSize(uint32_t size, uint32_t minOffsetAlignement);
+			void renderTrigone(void *v0, void *v1, void *v2);
 
-			uint32_t getGeneralUsageVertexSize();
+			void renderLine(void *v0, void *v1);
 
-			void* getGeneralUsageBuffer();
+			void renderPoint(void *v0);
 
-			void setGeneralUsageData(void* v, uint32_t vertexCount);
+			Topology getTopology();
 
-			void renderGeneralUsageData(VkCommandBuffer commandBuffer);
+			int getCurrentFrameIndex();
 
-			void setGeneralUsageTopology(Topology typology);
+			VkClearColorValue getClearColor();
 
-			void setGeneralUsageData(uint32_t offset, uint32_t count, void* data);
-
-			void flushGeneralUsageData(uint32_t offset, uint32_t count);
-
-			void renderQuadScene(void *v0, void *v1, void *v2, void *v3);
-
-			void renderTrigoneScene(void *v0, void *v1, void *v2);
-
-			void renderGeneralUsageQuad(void *v0, void *v1, void *v2, void *v3);
-
-			void renderGeneralUsageTrigone(void *v0, void *v1, void *v2);
-
-			void renderGeneralUsageLine(void *v0, void *v1);
-			
 		private:
 			void createCommandBuffers();
 			void freeCommandBuffers();
 			void recreateSwapChain();
-			void createSceneVertexBuffer(uint32_t count);
-			void createSceneIndexBuffer(uint32_t count);
-			void createGeneralUsageBuffers(uint32_t VbufferSize, uint32_t IBufferSize);
+			void createVertexBuffer(uint32_t count);
+			void createIndexBuffer(uint32_t count);
+
+			void flush();
+			void reset();
 
 			std::unique_ptr<SwapChain> swapChain = nullptr;
 			std::vector<VkCommandBuffer> commandBuffers;
@@ -118,23 +106,14 @@ namespace Fovea{
 			VkRect2D scissor;
 			VkExtent2D windowExtent = {1080, 720};
 
-			Buffer sceneVertexBuffer;
+			Buffer vertexBuffer;
 			Buffer indexBuffer;
 
-			uint32_t sceneVertexSize = 10;
-			uint32_t sceneAlignement = 10;
-			uint32_t sceneVertexBufferUsedSize = 0;
-			uint32_t sceneIndexUsed = 0;
-			uint32_t maxSceneVertexSize = 0;
-
-			Buffer generalUsageVertexBuffer;
-			Buffer generalUsageIndexBuffer;
-
-			uint32_t generalUsageVertexSize = 10;
-			uint32_t generalUsageAlignement = 10;
-			uint32_t generalUsageVertexBufferUsedSize = 0;
-			uint32_t generalUsageIndexUsed = 0;
-			uint32_t maxGeneralUsageVertexSize = 0;
-			Topology generalUsageTopology = Topology::Quad;
+			uint32_t vertexSize = 10;
+			uint32_t alignement = 10;
+			uint32_t vertexBufferUsedSize = 0;
+			uint32_t indexUsed = 0;
+			uint32_t maxVertexSize = 0;
+			Topology topology = Topology::Quad;
 	};
 }

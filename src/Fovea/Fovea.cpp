@@ -215,7 +215,7 @@ void initializeRenderCommandPool(){
 
 void initializeRenderer(){
 	Renderer &renderer = getInstance().renderer;
-	renderer.initialize(50000, 5000);
+	renderer.initialize(50000);
 	renderer.setClearColor(0.1, 0.1, 0.1, 1.0);
 }
 
@@ -252,6 +252,10 @@ void FoveaBeginFrame(void){
 	frameCommandBuffer() = getInstance().renderer.beginFrame();
 }
 
+FoveaBool FoveaIsFrameStarted(void){
+	return static_cast<FoveaBool>(getInstance().renderer.isFrameInProgress());
+}
+
 void FoveaBeginSwapChainRenderPass(void){
 	VkCommandBuffer& commandBuffer = frameCommandBuffer();
 	getInstance().renderer.beginSwapChainRenderPass(commandBuffer);
@@ -265,32 +269,20 @@ void FoveaEndFrame(void){
 	getInstance().renderer.endFrame();
 }
 
-void FoveaSetScene(void *v, uint32_t vertexCount){
-	getInstance().renderer.setScene(v, vertexCount);
+void FoveaSet(void *v, uint32_t vertexCount){
+	getInstance().renderer.set(v, vertexCount);
 }
 
-void FoveaSetSceneVertexSize(uint32_t size){
-	getInstance().renderer.setSceneVertexSize(size, getInstance().physicalDevice.getProperties().limits.nonCoherentAtomSize);
+void FoveaSetVertexSize(uint32_t size){
+	getInstance().renderer.setVertexSize(size, getInstance().physicalDevice.getProperties().limits.nonCoherentAtomSize);
 }
 
-uint32_t FoveaGetSceneVertexSize(){
-	return getInstance().renderer.getSceneVertexSize();
+uint32_t FoveaGetVertexSize(){
+	return getInstance().renderer.getVertexSize();
 }
 
-void* getSceneBuffer(){
-	return getInstance().renderer.getSceneBuffer();
-}
-
-uint32_t FoveaGetGeneraUsageVertexSize(){
-	return getInstance().renderer.getGeneralUsageVertexSize();
-}
-
-void* getGeneralUsageBuffer(){
-	return getInstance().renderer.getGeneralUsageBuffer();
-}
-
-void FoveaRenderScene(void){
-	getInstance().renderer.renderScene(frameCommandBuffer());
+void FoveaRender(void){
+	getInstance().renderer.render();
 }
 
 void FoveaDefaultShaderCreateInfo(FoveaShaderCreateInfo *createInfo){
@@ -650,50 +642,26 @@ FoveaTexture* FoveaCreateTexturesFromPaths(const char* paths[], FoveaTextureCrea
 	return textures;
 }
 
-void FoveaSetSceneData(uint32_t offset, uint32_t size, void* data){
-	getInstance().renderer.setSceneData(offset, size, data);
+void FoveaRenderQuad(void *v0, void *v1, void *v2, void *v3){
+	getInstance().renderer.renderQuad(v0, v1, v2, v3);
 }
 
-void FoveaFlushSceneData(uint32_t offset, uint32_t size){
-	getInstance().renderer.flushSceneData(offset, size);
+void FoveaRenderTrigone(void *v0, void *v1, void *v2){
+	getInstance().renderer.renderTrigone(v0, v1, v2);
 }
 
-void FoveaSetGeneralUsageVertexSize(uint32_t size){
-	getInstance().renderer.setGeneralUsageVertexSize(size, getInstance().physicalDevice.getProperties().limits.nonCoherentAtomSize);
+void FoveaRenderLine(void *v0, void *v1){
+	getInstance().renderer.renderLine(v0, v1);
 }
 
-void FoveaSetGeneralUsage(void *v, uint32_t vertexCount){
-	getInstance().renderer.setGeneralUsageData(v, vertexCount);
+void FoveaRenderPoint(void *v0){
+	getInstance().renderer.renderPoint(v0);
 }
 
-void FoveaSetGeneralUsageData(uint32_t offset, uint32_t count, void *data){
-	getInstance().renderer.setGeneralUsageData(offset, count, data);
+int32_t FoveaGetCurrentFrameIndex(void){
+	return static_cast<int32_t>(getInstance().renderer.getCurrentFrameIndex());
 }
 
-void FoveaFlushGeneralUsageData(uint32_t offset, uint32_t count){
-	getInstance().renderer.flushGeneralUsageData(offset, count);
-}
-
-void FoveaRenderGeneralUsageData(void){
-	getInstance().renderer.renderGeneralUsageData(frameCommandBuffer());
-}
-
-void FoveaSetGeneralUsageTopology(FoveaTopology topology){
-	getInstance().renderer.setGeneralUsageTopology(FoveaTopologyToRendererTopology(topology));
-}
-
-void FoveaRenderQuadScene(void *v0, void *v1, void *v2, void *v3){
-	getInstance().renderer.renderQuadScene(v0, v1, v2, v3);
-}
-
-void FoveaRenderGeneralUsageQuad(void *v0, void *v1, void *v2, void *v3){
-	getInstance().renderer.renderGeneralUsageQuad(v0, v1, v2, v3);
-}
-
-void FoveaRenderGeneralUsageTrigone(void *v0, void *v1, void *v2){
-	getInstance().renderer.renderGeneralUsageTrigone(v0, v1, v2);
-}
-
-void FoveaRenderGeneralUsageLine(void *v0, void *v1){
-	getInstance().renderer.renderGeneralUsageLine(v0, v1);
+FoveaColor FoveaGetWindowClearColor(void){
+	return *reinterpret_cast<FoveaColor*>(getInstance().renderer.getClearColor().float32);
 }
