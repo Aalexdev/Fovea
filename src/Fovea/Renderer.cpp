@@ -112,6 +112,7 @@ namespace Fovea{
 
 
 	VkCommandBuffer Renderer::beginFrame(){
+		if (isWindowMinimized) return VK_NULL_HANDLE;
 		assert(!isFrameStarted && "Can't call beginFrame while already in progress");
 
 		auto result = swapChain->acquireNextImage(&currentImageIndex);
@@ -143,6 +144,7 @@ namespace Fovea{
 	}
 
 	void Renderer::endFrame(){
+		if (isWindowMinimized) return;
 		assert(isFrameStarted && "can't call endFrame while frame isn't in progress");
 		VkCommandBuffer commandBuffer = getCurrentCommandBuffer();
 
@@ -162,6 +164,7 @@ namespace Fovea{
 	}
 
 	void Renderer::beginSwapChainRenderPass(VkCommandBuffer commandBuffer){
+		if (isWindowMinimized) return;
 		assert(isFrameStarted && "Can't call beginSwapChainRenderPass if frame isn't in progress");
 		assert(commandBuffer == getCurrentCommandBuffer() && "Can't begin render pass on command buffer from a different frame");
 		
@@ -193,6 +196,7 @@ namespace Fovea{
 	}
 
 	void Renderer::endSwapChainRenderPass(VkCommandBuffer commandBuffer){
+		if (isWindowMinimized) return;
 		assert(isFrameStarted && "Can't call endSwapChainRenderPass if frame isn't in progress");
 		assert(commandBuffer == getCurrentCommandBuffer() && "Can't end render pass on command buffer from a different frame");
 		vkCmdEndRenderPass(commandBuffer);
@@ -229,6 +233,7 @@ namespace Fovea{
 
 		VkExtent2D extent = windowExtent;
 
+		if (isWindowMinimized) return;
 		// while(extent.width == 0 || extent.height == 0){
 		// 	extent ice.getInstance().getWindow().getExtent();
 		// 	glfwWaitEvents();
@@ -263,7 +268,18 @@ namespace Fovea{
 
 	void Renderer::windowResized(uint32_t width, uint32_t height){
 		isWindowResized = true;
+
+		if (width == 0 || height == 0){
+			isWindowMinimized = true;
+		} else if (width > 0 && height > 0){
+			isWindowMinimized = false;
+		}
+
 		windowExtent = {width, height};
+	}
+
+	void Renderer::windowMinimized(){
+		isWindowMinimized = true;
 	}
 
 	void Renderer::setScene(void* v, uint32_t vertexCount){
@@ -355,7 +371,7 @@ namespace Fovea{
 
 	void Renderer::renderQuadScene(void *v0, void *v1, void *v2, void *v3){
 		char* ptr = static_cast<char*>(sceneVertexBuffer.getMappedMemory());
-		ptr += (sceneIndexUsed / 4) * sceneVertexSize;
+		ptr += sceneVertexBufferUsedSize;
 
 		memcpy(ptr, v0, sceneVertexSize);
 		ptr += sceneVertexSize;
@@ -375,7 +391,7 @@ namespace Fovea{
 
 	void Renderer::renderGeneralUsageQuad(void *v0, void *v1, void *v2, void *v3){
 		char* ptr = static_cast<char*>(generalUsageVertexBuffer.getMappedMemory());
-		ptr += (generalUsageIndexUsed / 4) * generalUsageVertexSize;
+		ptr += generalUsageVertexBufferUsedSize;
 
 		memcpy(ptr, v0, generalUsageVertexSize);
 		ptr += generalUsageVertexSize;
@@ -395,7 +411,7 @@ namespace Fovea{
 
 	void Renderer::renderGeneralUsageTrigone(void *v0, void *v1, void* v2){
 		char* ptr = static_cast<char*>(generalUsageVertexBuffer.getMappedMemory());
-		ptr += (generalUsageIndexUsed / 4) * generalUsageVertexSize;
+		ptr += generalUsageVertexBufferUsedSize;
 
 		memcpy(ptr, v0, generalUsageVertexSize);
 		ptr += generalUsageVertexSize;
@@ -411,7 +427,7 @@ namespace Fovea{
 
 	void Renderer::renderGeneralUsageLine(void *v0, void *v1){
 		char* ptr = static_cast<char*>(generalUsageVertexBuffer.getMappedMemory());
-		ptr += (generalUsageIndexUsed / 4) * generalUsageVertexSize;
+		ptr += generalUsageVertexBufferUsedSize;
 
 		memcpy(ptr, v0, generalUsageVertexSize);
 		ptr += generalUsageVertexSize;

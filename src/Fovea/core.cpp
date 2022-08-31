@@ -3,13 +3,7 @@
 namespace Fovea{
 	inline Core** getInstancePtr(){
 		static Core* core = new Core;
-
-		#ifndef NDEBUG
-			if (core == nullptr){
-				throw "Fovea has already been shutdown";
-			}
-		#endif
-
+		assert(core != nullptr && "Fovea has already been shutdown");
 		return &core;
 	}
 
@@ -17,7 +11,7 @@ namespace Fovea{
 		return **getInstancePtr();
 	}
 
-	void initializeInstance(){
+	void initInstance(){
 		getInstancePtr();
 	}
 

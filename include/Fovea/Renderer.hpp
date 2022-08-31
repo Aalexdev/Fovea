@@ -54,6 +54,8 @@ namespace Fovea{
 
 			void windowResized(uint32_t width, uint32_t height);
 
+			void windowMinimized();
+
 			void setScene(void* v, uint32_t vertexCount);
 
 			void setSceneVertexSize(uint32_t size, size_t minOffsetAlignement);
@@ -109,6 +111,7 @@ namespace Fovea{
 			int currentFrameIndex = 0;
 			bool isFrameStarted = false;
 			bool isWindowResized = false;
+			bool isWindowMinimized = false;
 
 			VkClearColorValue clearColor = {0.f, 0.f, 0.f, 0.f};
 			VkViewport viewport;

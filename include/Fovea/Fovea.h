@@ -1,20 +1,7 @@
 #ifndef __FOVEA__H__
 #define __FOVEA__H__
 
-#ifndef _STDINT_H
-	typedef char int8_t;
-	typedef unsigned char uint8_t;
-	typedef signed char sint8_t;
-	typedef short int16_t;
-	typedef unsigned short uint16_t;
-	typedef signed short sint16_t;
-	typedef int int32_t;
-	typedef unsigned int uint32_t;
-	typedef signed int sint32_t;
-	typedef long long int64_t;
-	typedef unsigned long long uint64_t;
-	typedef signed long long sint64_t;
-#endif
+#include <stdint.h>
 
 #ifdef __cplusplus
 	extern "C"{
@@ -23,6 +10,7 @@
 #define FOVEA_NONE (uint64_t)-1
 #define FOVEA_WHOLE_SIZE (~0ULL)
 #define FOVEA_DEPTH_ATTACHMENT (uint32_t)-1
+#define SDL_WINDOW_FOVEA 268435456
 
 typedef uint64_t FoveaShader;
 typedef uint64_t FoveaRenderTarget;
@@ -222,6 +210,8 @@ void FoveaShutdown(void);
 void FoveaSetClearColor(const FoveaColor color);
 
 void FoveaOnWindowResized(uint32_t width, uint32_t height);
+
+void FoveaOnWindowMinimized();
 
 void FoveaBeginFrame(void);
 

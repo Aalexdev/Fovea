@@ -240,6 +240,10 @@ void FoveaOnWindowResized(uint32_t width, uint32_t height){
 	getInstance().renderer.windowResized(width, height);
 }
 
+void FoveaOnWindowMinimized(){
+	getInstance().renderer.windowMinimized();
+}
+
 static inline VkCommandBuffer& frameCommandBuffer(){
 	return getInstance().commandBuffer;
 }
