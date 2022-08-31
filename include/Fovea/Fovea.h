@@ -217,6 +217,8 @@ typedef struct FoveaTextureCreateInfo{
 
 void FoveaInitialize(void *window);
 
+void FoveaShutdown(void);
+
 void FoveaSetClearColor(const FoveaColor color);
 
 void FoveaOnWindowResized(uint32_t width, uint32_t height);

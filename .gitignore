@@ -12,3 +12,6 @@ vulkan/
 
 # makefile
 makefile
+
+# IDE
+.vscode/

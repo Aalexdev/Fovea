@@ -34,5 +34,8 @@ namespace Fovea{
 		WaitIdle wait;
 	};
 
+	void initInstance();
+	void shutdownInstance();
+
 	Core& getInstance();
 };

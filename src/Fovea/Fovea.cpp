@@ -220,11 +220,16 @@ void initializeRenderer(){
 }
 
 void FoveaInitialize(void* window){
+	initInstance();
 	initializeInstance(window);
 	initializePhysicalDevice();
 	initializeLogicalDevice();
 	initializeRenderCommandPool();
 	initializeRenderer();
+}
+
+void FoveaShutdown(void){
+	shutdownInstance();
 }
 
 void FoveaSetClearColor(const FoveaColor color){
