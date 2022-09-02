@@ -55,6 +55,8 @@ int main(int argc, char **argv){
 		FoveaBeginFrame();
 		FoveaBeginSwapChainRenderPass();
 
+		// at this stage, we cannot draw because we haven't loaded a shader
+
 		FoveaEndSwapChainRenderPass();
 		FoveaEndFrame();
 	}

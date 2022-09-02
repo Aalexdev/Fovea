@@ -14,6 +14,7 @@ Project:
 			- descriptor set getters
 			- texture getters
 	
-- tests
-	- intialization @done (30/08/2022) @Aalexdev
-	- 
+	- tests
+		- Intialization @done (30/08/2022) @Aalexdev
+		- Shaders @done (02/09/2022) @Aalexdev
+	

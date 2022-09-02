@@ -16,6 +16,9 @@ makefile
 # output binaries
 out/
 
+# compiled shaders
+*.spv
+
 # tests
 *.exe
 
