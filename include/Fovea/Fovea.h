@@ -228,14 +228,6 @@ void FoveaRenderLine(void *v0, void *v1);
 
 void FoveaRenderPoint(void *v0);
 
-void FoveaRender(void);
-
-void FoveaSetData(uint32_t offset, uint32_t count, void* data);
-
-void FoveaFlushData(uint32_t offset, uint32_t count);
-
-void FoveaSetGeneralUsageVertexSize(uint32_t size);
-
 void FoveaSetTopology(FoveaTopology topology);
 
 FoveaTopology FoveaGetTopology(void);
@@ -294,7 +286,7 @@ FoveaDescriptorSet FoveaReserveDescriptorSet(void);
 
 void FoveaLoadReservedDescriptorSet(FoveaDescriptorSet descriptorSet, FoveaDescriptorSetCreateInfo* createInfo);
 
-// ========================= descriptor set =========================
+// ========================= textures =========================
 
 FoveaTextureCreateInfo FoveaDefaultTextureCreateInfo(void);
 

@@ -14,11 +14,19 @@ typedef struct vec3{
 	float x, y, z;
 } vec3;
 
-// the structure thar contain all the data for each vertices
+// the structure that contain all the data for each vertices
 typedef struct Vertex{
 	vec2 position;
 	vec3 color;
 } Vertex;
+
+// this struct will be sent to the gpu every time the engine render something, it can be changed dynamicaly
+// the push constant can be used to transfert data like camera transformation, a delta time
+// /!\ THE PUSH CONSTANT CANNOT BE HEAVIER THAN 144 Bytes
+typedef struct PushConstant{
+	// as an exemple, this is an offset that wil be added to every object rendered
+	vec2 offset;
+} PushConstant;
 
 FoveaShader loadShader(){
 	FoveaShader shader;
@@ -32,6 +40,7 @@ FoveaShader loadShader(){
 	createInfo.fragmentFilepath = "shader.frag.spv";
 
 	createInfo.vertexInputSize = sizeof(Vertex);
+	createInfo.pushConstantSize = sizeof(PushConstant);
 
 	// the data for each members of Vertex
 	FoveaShaderVertexAttribute attributes[2];
@@ -82,6 +91,9 @@ int main(int argc, char **argv){
 	vertices[2].color = (vec3){0.f, 0.f, 1.f};
 	vertices[2].position = (vec2){0.5f, -0.5f};
 
+	PushConstant pushConstant;
+	pushConstant.offset.y = 0;
+
 	FoveaBool launched = Fovea_True;
 	while (launched){
 		// poll events
@@ -112,7 +124,10 @@ int main(int argc, char **argv){
 
 		// the swapchain is the name of the screen render target, once you called this function, every draw calls will be drawn onto the screen, until you call FoveaEndSwapChainRenderPass()
 		FoveaBeginSwapChainRenderPass();
-
+		
+		// this will loop every object from left to right
+		pushConstant.offset.x = SDL_cosf((float)SDL_GetTicks64() / 1000.f);
+		FoveaSetShaderPushConstant(shader, &pushConstant);
 
 		FoveaUseShader(shader, NULL);
 
