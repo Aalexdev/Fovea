@@ -20,7 +20,7 @@ Project:
 			- Basic initialisation @done (02/09/2022) @Aalexdev
 			- Push constants @done (02/09/2022) @Aalexdev
 			- Descriptor sets
-				- Buffers
+				- Buffers @done (02/09/2022) @Aalexdev
 				- Textures
 					- From render target
 					- From path

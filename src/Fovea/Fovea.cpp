@@ -443,16 +443,19 @@ DescriptorSetBuilder DescriptorSetBuilderFromFoveaDescriptorSetCreateInfo(FoveaD
 		auto &d = descriptors[i];
 		auto &db = createInfo->descriptors[i];
 
-		std::vector<VkDescriptorImageInfo> info(db.textureCount);
-		for (uint32_t k=0; k<db.textureCount; k++){
-			auto descriptorInfo = getInstance().textureLibrary.get(db.textures[k])->getDescriptorInfo();
-			info[k] = descriptorInfo;
+		if (db.type == FoveaDescriptorType_Texture){
+			std::vector<VkDescriptorImageInfo> info(db.textureCount);
+			for (uint32_t k=0; k<db.textureCount; k++){
+				auto descriptorInfo = getInstance().textureLibrary.get(db.textures[k])->getDescriptorInfo();
+				info[k] = descriptorInfo;
+			}
+			d.imageInfos = info;
 		}
+
 
 		d.binding = db.binding;
 		d.bufferSize = db.bufferSize;
 		d.imageCount = db.textureCount;
-		d.imageInfos = info;
 		d.type = FoveaDescriptorTypeToVkDescriptorType(db.type);
 		d.stage = FoveaShaderStagePipelineStageFlags(db.stage);
 	}
@@ -574,7 +577,6 @@ void FoveaLoadReservedTextureFromData(FoveaTexture texture, FoveaImageFormat for
 }
 
 static inline FoveaImageFormat channelCountToImageFormat(int channel){
-	printf("%d\n", channel);
 	switch (channel){
 		case 1: return FoveaImageFormat_R8;
 		case 2: return FoveaImageFormat_R8G8;
