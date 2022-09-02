@@ -33,7 +33,8 @@ namespace Fovea{
 			enum class Topology{
 				Quad = 0,
 				Trigone = 1,
-				Line = 1
+				Line = 2,
+				Point = 3,
 			};
 
 			SwapChain &getSwapChain() noexcept {return *swapChain;}
@@ -66,7 +67,7 @@ namespace Fovea{
 
 			void setData(uint32_t offset, uint32_t count, void* data);
 
-			void setTopology(Topology typology);
+			void setTopology(Topology topology);
 
 			void renderQuad(void *v0, void *v1, void *v2, void *v3);
 

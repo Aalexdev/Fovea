@@ -113,14 +113,6 @@ static inline VkSampleCountFlagBits FoveaSampleToVkSample(FoveaSample sample){
 	return VK_SAMPLE_COUNT_1_BIT;
 }
 
-static inline int FoveaShaderTypeToPipelineStage(FoveaShaderType type){
-	switch (type){
-		case FoveaShaderType_Graphic: return VK_SHADER_STAGE_ALL_GRAPHICS;
-		case FoveaShaderType_Compute: return VK_SHADER_STAGE_COMPUTE_BIT;
-	}
-	return 0;
-}
-
 static inline VkDescriptorType FoveaDescriptorTypeToVkDescriptorType(FoveaDescriptorType type){
 	switch (type){
 		case FoveaDescriptorType_Buffer: return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -146,15 +138,6 @@ static inline VkPipelineStageFlags FoveaShaderStagePipelineStageFlags(int stages
 	if (stages & FoveaShaderStage_Geometry) vkStage |= VK_SHADER_STAGE_GEOMETRY_BIT;
 	if (stages & FoveaShaderStage_Vertex) vkStage |= VK_SHADER_STAGE_VERTEX_BIT;
 	return vkStage;
-}
-
-static inline Renderer::Topology FoveaTopologyToRendererTopology(FoveaTopology topology){
-	switch (topology){
-		case FoveaTopology_Quad: return Renderer::Topology::Quad;
-		case FoveaTopology_Trigone: return Renderer::Topology::Trigone;
-		case FoveaTopology_Line: return Renderer::Topology::Line;
-	}
-	return Renderer::Topology::Quad;
 }
 
 static inline VkPolygonMode FoveaPolygonModeToVkPolygonMode(FoveaPolygonMode mode){
@@ -262,6 +245,7 @@ void FoveaBeginSwapChainRenderPass(void){
 }
 
 void FoveaEndSwapChainRenderPass(void){
+	getInstance().renderer.render();
 	getInstance().renderer.endSwapChainRenderPass(frameCommandBuffer());
 }
 
@@ -287,7 +271,6 @@ void FoveaRender(void){
 
 void FoveaDefaultShaderCreateInfo(FoveaShaderCreateInfo *createInfo){
 	createInfo->sample = FoveaSample_1;
-	createInfo->type = FoveaShaderType_Graphic;
 	createInfo->pushConstantSize = 0;
 	createInfo->base = FOVEA_NONE;
 	createInfo->target = FOVEA_NONE;
@@ -296,6 +279,15 @@ void FoveaDefaultShaderCreateInfo(FoveaShaderCreateInfo *createInfo){
 	createInfo->vertexInputSize = 0;
 	createInfo->descriptorSetCount = 0;
 	createInfo->descriptorSets = nullptr;
+	createInfo->lineWidth = 1.f;
+	createInfo->depthTest = Fovea_True;
+	createInfo->depthWrite = Fovea_True;
+	createInfo->blending = Fovea_False;
+	createInfo->vertexFilepath = nullptr;
+	createInfo->fragmentFilepath = nullptr;
+	createInfo->geometryFilepath = nullptr;
+	createInfo->polygonMode = FoveaPolygonMode_Fill;
+	
 }
 
 PipelineBuilder FoveaCreatePipelineBuilderFromShaderCreateInfo(FoveaShaderCreateInfo *createInfo){
@@ -304,7 +296,6 @@ PipelineBuilder FoveaCreatePipelineBuilderFromShaderCreateInfo(FoveaShaderCreate
 	if (createInfo->vertexFilepath != nullptr) builder.setShaderStage(PipelineStage::VERTEX, createInfo->vertexFilepath);
 	if (createInfo->fragmentFilepath != nullptr) builder.setShaderStage(PipelineStage::FRAGMENT, createInfo->fragmentFilepath);
 	if (createInfo->geometryFilepath != nullptr) builder.setShaderStage(PipelineStage::GEOMETRY, createInfo->geometryFilepath);
-	if (createInfo->computeFilepath != nullptr) builder.setShaderStage(PipelineStage::COMPUTE, createInfo->computeFilepath);
 	builder->multisampleInfo.rasterizationSamples = FoveaSampleToVkSample(createInfo->sample);
 
 	if (createInfo->target != FOVEA_NONE){
@@ -313,7 +304,7 @@ PipelineBuilder FoveaCreatePipelineBuilderFromShaderCreateInfo(FoveaShaderCreate
 		builder.setRenderPass(getInstance().renderer.getSwapChain().getRenderPass());
 	}
 	
-	builder.setPushConstant(createInfo->pushConstantSize, FoveaShaderTypeToPipelineStage(createInfo->type));
+	builder.setPushConstant(createInfo->pushConstantSize, VK_SHADER_STAGE_ALL_GRAPHICS);
 
 	if (createInfo->base != FOVEA_NONE){
 		builder.setBase(getInstance().pipelineLibrary.get(createInfo->base));
@@ -349,6 +340,7 @@ PipelineBuilder FoveaCreatePipelineBuilderFromShaderCreateInfo(FoveaShaderCreate
 	builder->rasterizationInfo.lineWidth = createInfo->lineWidth;
 	builder->depthStencilInfo.depthTestEnable = createInfo->depthTest;
 	builder->colorBlendAttachment.blendEnable = createInfo->blending;
+	builder->depthStencilInfo.depthWriteEnable = createInfo->depthWrite;
 
 	return builder;
 }
@@ -433,6 +425,7 @@ void FoveaBeginRenderTarget(FoveaRenderTarget renderTarget){
 }
 
 void FoveaEndRenderTarget(FoveaRenderTarget renderTarget){
+	getInstance().renderer.render();
 	getInstance().renderTargetLibrary.get(renderTarget)->endRenderPass(frameCommandBuffer());
 }
 
@@ -664,4 +657,12 @@ int32_t FoveaGetCurrentFrameIndex(void){
 
 FoveaColor FoveaGetWindowClearColor(void){
 	return *reinterpret_cast<FoveaColor*>(getInstance().renderer.getClearColor().float32);
+}
+
+void FoveaSetTopology(FoveaTopology topology){
+	getInstance().renderer.setTopology(static_cast<Renderer::Topology>(topology));
+}
+
+FoveaTopology FoveaGetTopology(void){
+	return static_cast<FoveaTopology>(getInstance().renderer.getTopology());
 }

@@ -78,11 +78,6 @@ typedef enum FoveaSample{
 	FoveaSample_64 = 6,
 } FoveaSample;
 
-typedef enum FoveaShaderType{
-	FoveaShaderType_Graphic = 0,
-	FoveaShaderType_Compute = 1,
-} FoveaShaderType;
-
 typedef enum FoveaShaderStage{
 	FoveaShaderStage_Vertex = 1 << 0,
 	FoveaShaderStage_Geometry = 1 << 1,
@@ -106,6 +101,7 @@ typedef enum FoveaTopology{
 	FoveaTopology_Quad = 0,
 	FoveaTopology_Trigone = 1,
 	FoveaTopology_Line = 2,
+	FoveaTopology_Point = 3,
 } FoveaTopology;
 
 typedef struct FoveaColor{
@@ -133,7 +129,6 @@ typedef enum FoveaPolygonMode{
 
 typedef struct FoveaShaderCreateInfo{
 	FoveaSample sample;
-	FoveaShaderType type;
 	uint32_t pushConstantSize;
 	FoveaRenderTarget target;
 	FoveaShader base;
@@ -146,12 +141,12 @@ typedef struct FoveaShaderCreateInfo{
 	FoveaPolygonMode polygonMode;
 	float lineWidth;
 	FoveaBool depthTest;
+	FoveaBool depthWrite;
 	FoveaBool blending;
 
 	const char* vertexFilepath;
 	const char* fragmentFilepath;
 	const char* geometryFilepath;
-	const char* computeFilepath;
 } FoveaShaderCreateInfo;
 
 typedef struct FoveaRenderTargetAttachment{
@@ -241,7 +236,7 @@ void FoveaFlushData(uint32_t offset, uint32_t count);
 
 void FoveaSetGeneralUsageVertexSize(uint32_t size);
 
-void FoveaSetTopology(FoveaTopology typology);
+void FoveaSetTopology(FoveaTopology topology);
 
 FoveaTopology FoveaGetTopology(void);
 

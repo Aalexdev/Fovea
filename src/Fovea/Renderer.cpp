@@ -250,15 +250,35 @@ namespace Fovea{
 		vertexBuffer.flush(alignement * vertexCount);
 	}
 
-	void Renderer::render(){
-		if (indexUsed == 0) return;
+	static uint32_t topologyToVertexCount(Renderer::Topology topology){
+		switch (topology){
+			case Renderer::Topology::Quad: return 4;
+			case Renderer::Topology::Trigone: return 3;
+			case Renderer::Topology::Line: return 2;
+			case Renderer::Topology::Point: return 1;
+		}
+		return 0;
+	}
 
-		vkCmdBindIndexBuffer(getInstance().commandBuffer, indexBuffer.getBuffer(), 0, VK_INDEX_TYPE_UINT32);
+	void Renderer::render(){
+		if (vertexBufferUsedSize == 0) return;
+
+		
 		VkBuffer vertexBuffer = this->vertexBuffer.getBuffer();
 		VkDeviceSize offset = 0;
 		vkCmdBindVertexBuffers(getInstance().commandBuffer, 0, 1, &vertexBuffer, &offset);
 
-		vkCmdDrawIndexed(getInstance().commandBuffer, indexUsed, 1, 0, 0, 0);
+		if (topology == Topology::Quad){
+			vkCmdBindIndexBuffer(getInstance().commandBuffer, indexBuffer.getBuffer(), 0, VK_INDEX_TYPE_UINT32);
+
+			vkCmdDrawIndexed(getInstance().commandBuffer, 6, indexUsed / 6, 0, 0, 0);
+		} else {
+			uint32_t vertexCount = topologyToVertexCount(topology);
+
+			vkCmdDraw(getInstance().commandBuffer, vertexCount, vertexBufferUsedSize / vertexSize / vertexCount, 0, 0);
+		}
+
+
 		flush();
 		reset();
 	}
@@ -307,7 +327,7 @@ namespace Fovea{
 	}
 
 	void Renderer::renderTrigone(void *v0, void *v1, void* v2){
-
+		
 		if (vertexBufferUsedSize + 3 * vertexSize > maxVertexSize){
 			render();
 		}
@@ -316,15 +336,15 @@ namespace Fovea{
 		ptr += vertexBufferUsedSize;
 
 		memcpy(ptr, v0, vertexSize);
-		ptr += vertexBufferUsedSize;
+		ptr += vertexSize;
 
 		memcpy(ptr, v1, vertexSize);
-		ptr += vertexBufferUsedSize;
+		ptr += vertexSize;
 		
 		memcpy(ptr, v2, vertexSize);
-		ptr += vertexBufferUsedSize;
+		ptr += vertexSize;
 	
-		vertexBufferUsedSize += 3 * vertexBufferUsedSize;
+		vertexBufferUsedSize += 3 * vertexSize;
 	}
 
 	void Renderer::renderLine(void *v0, void *v1){
@@ -334,15 +354,15 @@ namespace Fovea{
 		}
 
 		char* ptr = static_cast<char*>(vertexBuffer.getMappedMemory());
-		ptr += vertexBufferUsedSize;
+		ptr += vertexSize;
 
 		memcpy(ptr, v0, vertexSize);
-		ptr += vertexBufferUsedSize;
+		ptr += vertexSize;
 
 		memcpy(ptr, v1, vertexSize);
-		ptr += vertexBufferUsedSize;
+		ptr += vertexSize;
 		
-		vertexBufferUsedSize += 2 * vertexBufferUsedSize;
+		vertexBufferUsedSize += 2 * vertexSize;
 	}
 
 	void Renderer::renderPoint(void *v0){
@@ -350,14 +370,18 @@ namespace Fovea{
 		ptr += vertexBufferUsedSize;
 
 		memcpy(ptr, v0, vertexSize);
-		ptr += vertexBufferUsedSize;
 		
-		vertexBufferUsedSize += vertexBufferUsedSize;
+		vertexBufferUsedSize += vertexSize;
 	}
 
 	Renderer::Topology Renderer::getTopology(){
 		return topology;
 	}
+
+	void Renderer::setTopology(Topology topology){
+		this->topology = topology;
+	}
+
 
 	int Renderer::getCurrentFrameIndex(){
 		return currentFrameIndex;
