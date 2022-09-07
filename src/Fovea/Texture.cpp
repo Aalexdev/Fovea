@@ -32,12 +32,37 @@ namespace Fovea{
 		createImageSampler(builder);
 	}
 
-	static inline VkFormat channelCountToVkFormat(int channel){
+	// this format is supposed to work in any scenario
+	#define DEFAULT_FORMAT VK_FORMAT_R8G8B8A8_SRGB
+	#define DEFAULT_FORMAT_SIZE 4
+
+	// if the first format isn't supported it will test the second one and go on... unit the default format
+	#define R_FORMATS {VK_FORMAT_R8_SRGB, VK_FORMAT_R8_SNORM, VK_FORMAT_R8_UNORM, DEFAULT_FORMAT}
+	#define RG_FORMATS {VK_FORMAT_R8G8_SRGB, VK_FORMAT_R8G8_SNORM, VK_FORMAT_R8G8_UNORM, DEFAULT_FORMAT}
+	#define RGB_FORMATS {VK_FORMAT_R8G8B8_SRGB, VK_FORMAT_R8G8B8_SNORM, VK_FORMAT_R8G8B8_UNORM, DEFAULT_FORMAT}
+	#define RGBA_FORMATS {VK_FORMAT_R8G8B8A8_SRGB, VK_FORMAT_R8G8B8A8_SNORM, VK_FORMAT_R8G8B8A8_UNORM, DEFAULT_FORMAT}
+
+	#define CHECK_FORMAT(format, channelNames, channelCount) for (auto f : channelNames ## _FORMATS){if (format == f) return channelCount;} 
+
+	static inline int getChannelCount(VkFormat format){
+		if (format == DEFAULT_FORMAT){
+			return DEFAULT_FORMAT_SIZE;
+		}
+
+		CHECK_FORMAT(format, R, 1);
+		CHECK_FORMAT(format, RG, 2);
+		CHECK_FORMAT(format, RGB, 3);
+		CHECK_FORMAT(format, RGBA, 4);
+
+		return DEFAULT_FORMAT_SIZE;
+	}
+
+	static inline VkFormat channelCountToVkFormat(int channel, VkImageTiling tiling, VkFormatFeatureFlags features){
 		switch (channel){
-			case 1: return VK_FORMAT_R8_SRGB;
-			case 2: return VK_FORMAT_R8G8_SRGB;
-			case 3: return VK_FORMAT_R8G8B8_SRGB;
-			case 4: return VK_FORMAT_R8G8B8A8_SRGB;
+			case 1: return getInstance().physicalDevice.findSupportedFormat(R_FORMATS, tiling, features);
+			case 2: return getInstance().physicalDevice.findSupportedFormat(RG_FORMATS, tiling, features);
+			case 3: return getInstance().physicalDevice.findSupportedFormat(RGB_FORMATS, tiling, features);
+			case 4: return getInstance().physicalDevice.findSupportedFormat(RGBA_FORMATS, tiling, features);
 		}
 		return VK_FORMAT_R8_UINT;
 	}
@@ -48,10 +73,17 @@ namespace Fovea{
 
 		extent.width = static_cast<uint32_t>(w);
 		extent.height = static_cast<uint32_t>(h);
-		format = channelCountToVkFormat(channel);
+
+		format = channelCountToVkFormat(channel, builder.tiling, VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT);
+		int supportedChannel = getChannelCount(format);
+
+		if (supportedChannel != channel){
+			unsigned char* oldPixels = static_cast<unsigned char*>(pixels);
+			pixels = stbi__convert_format(oldPixels, channel, supportedChannel, w, h);
+			channel = supportedChannel;
+		}
 
 		createFromData(pixels, channel, builder);
-
 		stbi_image_free(pixels);
 	}
 
@@ -107,12 +139,16 @@ namespace Fovea{
 		createInfo.mipLevels = 1;
 		createInfo.arrayLayers = 1;
 		createInfo.format = format;
-		createInfo.tiling = builder.tiling;
+		createInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
 		createInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 		createInfo.usage =  VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
 		createInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 		createInfo.samples = builder.samples;
 		createInfo.flags = 0;
+		// createInfo.queueFamilyIndexCount = 1;
+
+		// uint32_t queueIndex = getInstance().physicalDevice.getFamily(PhysicalDeviceFamily::FAMILY_GRAPHIC).family;
+		// createInfo.pQueueFamilyIndices = &queueIndex;
 
 		getInstance().logicalDevice.createImageWithInfo(createInfo, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, image, imageMemory);
 	}
@@ -149,7 +185,7 @@ namespace Fovea{
 
 		SingleTimeCommand::transitionImageLayout(image, format, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 		SingleTimeCommand::copyBufferToImage(staginBuffer.getBuffer(), image, extent.width, extent.height);
-		SingleTimeCommand::transitionImageLayout(image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+		SingleTimeCommand::transitionImageLayout(image, format, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
 		createImageSampler(builder);
 	}

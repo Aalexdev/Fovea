@@ -14,7 +14,7 @@ namespace Fovea{
 		bool anisotropy = false;
 		bool normalizeCoords = false;
 
-		VkImageTiling tiling = VK_IMAGE_TILING_OPTIMAL;
+		VkImageTiling tiling = VK_IMAGE_TILING_LINEAR;
 		VkSampleCountFlagBits samples = VK_SAMPLE_COUNT_1_BIT;
 	};
 
