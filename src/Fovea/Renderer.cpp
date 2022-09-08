@@ -262,7 +262,6 @@ namespace Fovea{
 
 	void Renderer::render(){
 		if (vertexBufferUsedSize == 0) return;
-
 		
 		VkBuffer vertexBuffer = this->vertexBuffer.getBuffer();
 		VkDeviceSize offset = 0;
@@ -271,13 +270,12 @@ namespace Fovea{
 		if (topology == Topology::Quad){
 			vkCmdBindIndexBuffer(getInstance().commandBuffer, indexBuffer.getBuffer(), 0, VK_INDEX_TYPE_UINT32);
 
-			vkCmdDrawIndexed(getInstance().commandBuffer, 6, indexUsed / 6, 0, 0, 0);
+			vkCmdDrawIndexed(getInstance().commandBuffer, indexUsed, 1, 0, 0, 0);
 		} else {
 			uint32_t vertexCount = topologyToVertexCount(topology);
 
-			vkCmdDraw(getInstance().commandBuffer, vertexCount, vertexBufferUsedSize / vertexSize / vertexCount, 0, 0);
+			vkCmdDraw(getInstance().commandBuffer, vertexBufferUsedSize / vertexSize, 1, 0, 0);
 		}
-
 
 		flush();
 		reset();

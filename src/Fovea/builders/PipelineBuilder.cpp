@@ -113,4 +113,10 @@ namespace Fovea{
 		vertexDescription = description;
 		hasVertexDescription = true;
 	}
+
+	void PipelineBuilder::setInstanceDescription(const PipelineVertexDescription &description){
+		instanceDescription = description;
+		hasInstanceDescription = true;
+	}
+
 }

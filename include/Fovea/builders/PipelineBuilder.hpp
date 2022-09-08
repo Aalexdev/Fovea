@@ -80,6 +80,7 @@ namespace Fovea{
 
 
 			void setVertexDescription(const PipelineVertexDescription &description);
+			void setInstanceDescription(const PipelineVertexDescription &description);
 			
 		private:
 			struct ShaderStage{
@@ -103,5 +104,7 @@ namespace Fovea{
 
 			bool hasVertexDescription = false;
 			PipelineVertexDescription vertexDescription;
+			bool hasInstanceDescription = false;
+			PipelineVertexDescription instanceDescription;
 	};
 }

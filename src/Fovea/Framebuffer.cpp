@@ -138,7 +138,7 @@ namespace Fovea{
 		createInfo.extent.height = builder.extent.height;
 		createInfo.extent.depth = 1;
 
-		createInfo.flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
+		createInfo.flags = 0;
 		createInfo.imageType = VK_IMAGE_TYPE_2D;
 		createInfo.format = attachment.format;
 		createInfo.mipLevels = 1;
@@ -191,7 +191,7 @@ namespace Fovea{
 		createInfo.extent.height = builder.extent.height;
 		createInfo.extent.depth = 1;
 
-		createInfo.flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
+		createInfo.flags = 0;
 		createInfo.imageType = VK_IMAGE_TYPE_2D;
 		createInfo.format = depthFormat;
 		createInfo.mipLevels = 1;

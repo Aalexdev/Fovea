@@ -310,9 +310,9 @@ PipelineBuilder FoveaCreatePipelineBuilderFromShaderCreateInfo(FoveaShaderCreate
 		builder.setBase(getInstance().pipelineLibrary.get(createInfo->base));
 	}
 
-	PipelineVertexDescription vertexDescription;
 
 	if (createInfo->vertexInputSize > 0){
+		PipelineVertexDescription vertexDescription;
 		vertexDescription.attributeDescriptions.resize(createInfo->vertexAttributsCount);
 		for (int i=0; i<createInfo->vertexAttributsCount; i++){
 			auto &des = vertexDescription.attributeDescriptions[i];
@@ -327,7 +327,6 @@ PipelineBuilder FoveaCreatePipelineBuilderFromShaderCreateInfo(FoveaShaderCreate
 		vertexDescription.bindingDescription.binding = 0;
 		vertexDescription.bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 		vertexDescription.bindingDescription.stride = createInfo->vertexInputSize;
-
 		builder.setVertexDescription(vertexDescription);
 	}
 

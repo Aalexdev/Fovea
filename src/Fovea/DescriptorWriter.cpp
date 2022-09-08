@@ -48,7 +48,7 @@ namespace Fovea{
  
 		auto &bindingDescription = setLayout->bindings[binding];
 
-		assert(bindingDescription.descriptorCount == 1 && "binding single descriptor info, but binding expects multiple");
+		// assert(bindingDescription.descriptorCount == 1 && "binding single descriptor info, but binding expects multiple");
 
 		VkWriteDescriptorSet write{};
 		write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;

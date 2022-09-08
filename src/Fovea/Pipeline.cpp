@@ -98,13 +98,50 @@ namespace Fovea{
 		VkPipelineVertexInputStateCreateInfo vertexInputInfo = {};
 
 		vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+		VkVertexInputAttributeDescription* attributes = nullptr;
+		VkVertexInputBindingDescription* descriptions = nullptr;
 
-		if (builder.hasVertexDescription){
-			vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(builder.vertexDescription.attributeDescriptions.size());
-			vertexInputInfo.pVertexAttributeDescriptions = builder.vertexDescription.attributeDescriptions.data();
+		if (builder.hasInstanceDescription || builder.hasVertexDescription){
+			// vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(builder.vertexDescription.attributeDescriptions.size());
+			// vertexInputInfo.pVertexAttributeDescriptions = builder.vertexDescription.attributeDescriptions.data();
 
-			vertexInputInfo.vertexBindingDescriptionCount = 1;
-			vertexInputInfo.pVertexBindingDescriptions = &builder.vertexDescription.bindingDescription;
+			// vertexInputInfo.vertexBindingDescriptionCount = 1;
+			// vertexInputInfo.pVertexBindingDescriptions = &builder.vertexDescription.bindingDescription;
+			uint32_t attributeCount = static_cast<uint32_t>(builder.instanceDescription.attributeDescriptions.size() + builder.vertexDescription.attributeDescriptions.size());
+			attributes = new VkVertexInputAttributeDescription[attributeCount];
+
+			{
+				uint32_t i = 0;
+				for (auto d : builder.instanceDescription.attributeDescriptions){
+					attributes[i] = d;
+					i++;
+				}
+
+				for (auto d : builder.vertexDescription.attributeDescriptions){
+					attributes[i] = d;
+					i++;
+				}
+			}
+
+			vertexInputInfo.vertexAttributeDescriptionCount = attributeCount;
+			vertexInputInfo.pVertexAttributeDescriptions = attributes;
+
+			vertexInputInfo.vertexBindingDescriptionCount = static_cast<uint32_t>(builder.hasInstanceDescription) + static_cast<uint32_t>(builder.hasVertexDescription);
+			descriptions = new VkVertexInputBindingDescription[vertexInputInfo.vertexBindingDescriptionCount];
+
+			{
+				uint32_t i = 0;
+				if (builder.hasInstanceDescription){
+					descriptions[i] = builder.instanceDescription.bindingDescription;
+					i++;
+				}
+
+				if (builder.hasVertexDescription){
+					descriptions[i] = builder.vertexDescription.bindingDescription;
+				}
+			}
+
+			vertexInputInfo.pVertexBindingDescriptions = descriptions;
 		} else {
 			vertexInputInfo.vertexAttributeDescriptionCount = 0;
 			vertexInputInfo.pVertexAttributeDescriptions = nullptr;
@@ -112,6 +149,7 @@ namespace Fovea{
 			vertexInputInfo.vertexBindingDescriptionCount = 0;
 			vertexInputInfo.pVertexBindingDescriptions = nullptr;
 		}
+		
 
 		VkGraphicsPipelineCreateInfo createInfo = {};
 		createInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
@@ -143,6 +181,9 @@ namespace Fovea{
 		if (result != VK_SUCCESS){
 			throw std::runtime_error("failed to create graphic pipeline");
 		}
+
+		if (attributes != nullptr) delete[] attributes;
+		if (descriptions != nullptr) delete[] descriptions;
 	}
 
 	static inline VkShaderStageFlags stageToVkStages(int stages){

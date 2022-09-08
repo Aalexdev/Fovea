@@ -1,4 +1,4 @@
-#version 450
+#version 460 core
 
 // get the vertex attributes
 layout (location = 0) in vec2 position;
