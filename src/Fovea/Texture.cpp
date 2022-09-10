@@ -11,14 +11,8 @@ namespace Fovea{
 	Texture::Texture(Framebuffer &framebuffer, uint32_t attachment, TextureBuilder& builder){
 		if (attachment == DEPTH_ATTACHMENT){
 			image = framebuffer.depthImage;
-			image.custom = true;
-
 			imageView = framebuffer.depthImageView;
-			imageView.custom = true;
-
 			imageMemory = framebuffer.depthImageMemory;
-			imageMemory.custom = true;
-
 			format = framebuffer.depthFormat;
 		} else {
 			auto &a = framebuffer.colorAttachments[attachment];
@@ -27,6 +21,11 @@ namespace Fovea{
 			imageMemory = a.imageMemory;
 			format = a.format;
 		}
+
+		image.custom = true;
+		imageView.custom = true;
+		imageMemory.custom = true;
+
 
 		extent = framebuffer.extent;
 		createImageSampler(builder);
@@ -145,10 +144,10 @@ namespace Fovea{
 		createInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 		createInfo.samples = builder.samples;
 		createInfo.flags = 0;
-		// createInfo.queueFamilyIndexCount = 1;
+		createInfo.queueFamilyIndexCount = 1;
 
-		// uint32_t queueIndex = getInstance().physicalDevice.getFamily(PhysicalDeviceFamily::FAMILY_GRAPHIC).family;
-		// createInfo.pQueueFamilyIndices = &queueIndex;
+		uint32_t queueIndex = getInstance().physicalDevice.getFamily(PhysicalDeviceFamily::FAMILY_GRAPHIC).family;
+		createInfo.pQueueFamilyIndices = &queueIndex;
 
 		getInstance().logicalDevice.createImageWithInfo(createInfo, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, image, imageMemory);
 	}

@@ -14,6 +14,19 @@ namespace Fovea{
 	}
 
 	void RenderTarget::initialize(RenderTargetBuilder &builder){
+		viewport.x = 0.f;
+		viewport.y = 0.f;
+		viewport.minDepth = 0.f;
+		viewport.maxDepth = 1.f;
+		viewport.width = 1.f;
+		viewport.height = 1.f;
+
+		scissor.offset = {0, 0};
+		scissor.extent = {1, 1};
+
+		createRenderPass(builder);
+		builder.framebufferBuilder.renderPass = renderPass;
+
 		if (builder.fb != nullptr){
 			framebuffer = builder.fb;
 			customFramebuffer = true;
@@ -26,6 +39,7 @@ namespace Fovea{
 		uint32_t index = 0;
 		if (builder.framebufferBuilder.depthBufferEnabled){
 			clearValues[index].depthStencil = {builder.depthClear, builder.stencilClear};
+			index++;
 		}
 
 		for (int i=0; i<builder.clearColors.size(); i++){
@@ -38,18 +52,6 @@ namespace Fovea{
 			clearValues[index].color = color;
 			index++;
 		}
-
-		viewport.x = 0.f;
-		viewport.y = 0.f;
-		viewport.minDepth = 0.f;
-		viewport.maxDepth = 1.f;
-		viewport.width = 1.f;
-		viewport.height = 1.f;
-
-		scissor.offset = {0, 0};
-		scissor.extent = {1, 1};
-
-		createRenderPass(builder);
 	}
 
 	void RenderTarget::beginRenderPass(VkCommandBuffer commandBuffer){
@@ -79,8 +81,8 @@ namespace Fovea{
 	}
 
 	void RenderTarget::createRenderPass(RenderTargetBuilder &builder){
-		bool depthAttachment = framebuffer->depthAttachmentEnabled;
 		auto &bd = builder.framebufferBuilder;
+		bool depthAttachment = bd.depthBufferEnabled;
 	
 		std::vector<VkAttachmentDescription> attachmentDescriptions(bd.attachments.attachments.size() + static_cast<size_t>(bd.depthBufferEnabled));
 		std::vector<VkAttachmentReference> colorAttachmentsRefs(bd.attachments.attachments.size());
@@ -118,7 +120,7 @@ namespace Fovea{
 			attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 			attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 			attachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
+			
 			colorAttachmentsRefs[i].attachment = attachmentIndex;
 			colorAttachmentsRefs[i].layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 

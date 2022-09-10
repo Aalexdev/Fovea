@@ -261,7 +261,7 @@ namespace Fovea{
 			description.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
 			description.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 			description.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-			description.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+			description.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
 			attachmentIndex++;
 		}
@@ -344,6 +344,8 @@ namespace Fovea{
 		createInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
 		createInfo.pAttachments = attachments.data();
 		createInfo.layers = 1;
+
+		printf("%d, %d\n", extent.width, extent.height);
 		
 		VkFramebuffer framebuffer = VK_NULL_HANDLE;
 		if (vkCreateFramebuffer(getInstance().logicalDevice.getDevice(), &createInfo, nullptr, &framebuffer) != VK_SUCCESS){
