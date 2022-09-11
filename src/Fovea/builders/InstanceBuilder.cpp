@@ -19,9 +19,9 @@ namespace Fovea{
 
 	void InstanceBuilder::setVulkanVersion(VulkanVersion&& version){
 		switch (version){
-			case VULKAN_1_0: apiVersion = VK_API_VERSION_1_0; break;
-			case VULKAN_1_1: apiVersion = VK_API_VERSION_1_1; break;
-			case VULKAN_1_2: apiVersion = VK_API_VERSION_1_2; break;
+			case VulkanVersion::VULKAN_1_0: apiVersion = VK_API_VERSION_1_0; break;
+			case VulkanVersion::VULKAN_1_1: apiVersion = VK_API_VERSION_1_1; break;
+			case VulkanVersion::VULKAN_1_2: apiVersion = VK_API_VERSION_1_2; break;
 		}
 	}
 

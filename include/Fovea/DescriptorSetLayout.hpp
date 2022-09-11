@@ -17,6 +17,7 @@ namespace Fovea{
 			VkDescriptorSetLayout getDescriptorSetLayout();
 
 		private:
+			LogicalDevice* device = nullptr;
 			VkDescriptorSetLayout setLayout;
 			std::unordered_map<uint32_t, VkDescriptorSetLayoutBinding> bindings{};
 	};

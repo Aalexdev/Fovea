@@ -16,11 +16,16 @@ namespace Fovea{
 		requiredExtensions.push_back(ext);
 	}
 
-	void PhysicalDeviceBuidler::requireFamily(PhysicalDeviceFamily family){
+	void PhysicalDeviceBuidler::requireFamily(VkQueueFlagBits family){
 		requiredFamilies.set(static_cast<size_t>(family));
 	}
 
 	void PhysicalDeviceBuidler::requireFeature(PhysicalDeviceFeature feature){
 		requiredFeatures.set(static_cast<size_t>(feature));
 	}
+
+	void PhysicalDeviceBuidler::setInstance(Instance* instance){
+		this->instance = instance;
+	}
+
 }

@@ -1,9 +1,10 @@
 #include "Fovea/Pipeline.hpp"
-#include "Fovea/core.hpp"
+
 #include "Fovea/DescriptorSetLayout.hpp"
 
 #include <fstream>
 #include <stdexcept>
+#include <cassert>
 
 namespace Fovea{
 
@@ -11,7 +12,7 @@ namespace Fovea{
 		std::ifstream file(filepath, std::ios::ate | std::ios::binary);
 
 		if (!file.is_open())
-			throw std::runtime_error("failed to open : " + filepath);
+			throw std::string("failed to open : " + filepath).c_str();
 		
 		size_t fileSize = file.tellg();
 		std::vector<char> buffer(fileSize);
@@ -28,23 +29,23 @@ namespace Fovea{
 	}
 
 	Pipeline::~Pipeline(){
-		VkDevice device = getInstance().logicalDevice.getDevice();
+		if (pipeline){
+			VkDevice device = this->device->getDevice();
 
-		bool shared = (*refCount) > 1;
-		
-		if (!shared){
-			for (auto m : shaderModules){
-				vkDestroyShaderModule(device, m.shaderModule, nullptr);
+			bool shared = (*refCount) > 1;
+			if (!shared){
+				for (auto m : shaderModules){
+					vkDestroyShaderModule(device, m.shaderModule, nullptr);
+				}
 			}
+
+			vkDestroyPipeline(device, pipeline, nullptr);
+			if (!shared){
+				vkDestroyPipelineLayout(device, layout, nullptr);
+			}
+
+			(*refCount)--;
 		}
-
-		vkDestroyPipeline(device, pipeline, nullptr);
-
-		if (!shared){
-			vkDestroyPipelineLayout(device, layout, nullptr);
-		}
-
-		(*refCount)--;
 	}
 
 	void Pipeline::initialize(PipelineBuilder *builder){
@@ -86,6 +87,7 @@ namespace Fovea{
 
 		for (int i=0; i<static_cast<int>(shaderStages.size()); i++){
 			auto &stage = shaderStages[i];
+			
 			stage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 			stage.module = shaderModules[i].shaderModule;
 			stage.pName = "main";
@@ -177,35 +179,13 @@ namespace Fovea{
 
 		createInfo.basePipelineIndex = -1;
 
-		VkResult result = vkCreateGraphicsPipelines(getInstance().logicalDevice.getDevice(), VK_NULL_HANDLE, 1, &createInfo, nullptr, &pipeline);
+		VkResult result = vkCreateGraphicsPipelines(device->getDevice(), VK_NULL_HANDLE, 1, &createInfo, nullptr, &pipeline);
 		if (result != VK_SUCCESS){
-			throw std::runtime_error("failed to create graphic pipeline");
+			throw "failed to create graphic pipeline";
 		}
 
 		if (attributes != nullptr) delete[] attributes;
 		if (descriptions != nullptr) delete[] descriptions;
-	}
-
-	static inline VkShaderStageFlags stageToVkStages(int stages){
-		VkShaderStageFlags vkStages = 0;
-
-		if (stages & PipelineStage::VERTEX){
-			vkStages |= VK_SHADER_STAGE_VERTEX_BIT;
-		}
-
-		if (stages & PipelineStage::GEOMETRY){
-			vkStages |= VK_SHADER_STAGE_GEOMETRY_BIT;
-		}
-
-		if (stages & PipelineStage::FRAGMENT){
-			vkStages |= VK_SHADER_STAGE_FRAGMENT_BIT;
-		}
-
-		if (stages & PipelineStage::COMPUTE){
-			vkStages |= VK_SHADER_STAGE_COMPUTE_BIT;
-		}
-
-		return stages;
 	}
 
 	void Pipeline::createPipelineLayout(PipelineBuilder &builder){
@@ -217,7 +197,7 @@ namespace Fovea{
 		VkPushConstantRange range = {};
 		range.offset = 0;
 		range.size = builder.pushConstant.size;
-		range.stageFlags = stageToVkStages(builder.pushConstant.stages);
+		range.stageFlags = builder.pushConstant.stages;
 
 		pushConstantSize = builder.pushConstant.size;
 		pushConstantStages = range.stageFlags;
@@ -253,19 +233,33 @@ namespace Fovea{
 
 		createInfo.flags = 0;
 
-		if (vkCreatePipelineLayout(getInstance().logicalDevice.getDevice(), &createInfo, nullptr, &layout) != VK_SUCCESS){
-			throw std::runtime_error("failed to create pipeline layout");
+		if (vkCreatePipelineLayout(device
+		->getDevice(), &createInfo, nullptr, &layout) != VK_SUCCESS){
+			throw "failed to create pipeline layout";
 		}
 	}
 
-	static inline VkShaderStageFlagBits pipelineStageToVkStage(PipelineStage stage){
+	static inline VkShaderStageFlagBits pipelineStageToVkStage(ShaderStage stage){
 		switch (stage){
-			case PipelineStage::VERTEX: return VK_SHADER_STAGE_VERTEX_BIT;
-			case PipelineStage::GEOMETRY: return VK_SHADER_STAGE_GEOMETRY_BIT;
-			case PipelineStage::FRAGMENT: return VK_SHADER_STAGE_FRAGMENT_BIT;
-			case PipelineStage::COMPUTE: return VK_SHADER_STAGE_COMPUTE_BIT;
+			case SHADER_STAGE_VERTEX: return VK_SHADER_STAGE_VERTEX_BIT;
+			case SHADER_STAGE_TESSELLATION_CONTROL: return VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
+			case SHADER_STAGE_TESSELLATION_EVALUATION: return VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
+			case SHADER_STAGE_GEOMETRY: return VK_SHADER_STAGE_GEOMETRY_BIT;
+			case SHADER_STAGE_FRAGMENT: return VK_SHADER_STAGE_FRAGMENT_BIT;
+			case SHADER_STAGE_COMPUTE: return VK_SHADER_STAGE_COMPUTE_BIT;
+			case SHADER_STAGE_ALL_GRAPHICS: return VK_SHADER_STAGE_ALL_GRAPHICS;
+			case SHADER_STAGE_ALL: return VK_SHADER_STAGE_ALL;
+			case SHADER_STAGE_RAYGEN: return VK_SHADER_STAGE_RAYGEN_BIT_KHR;
+			case SHADER_STAGE_ANY_HIT: return VK_SHADER_STAGE_ANY_HIT_BIT_KHR;
+			case SHADER_STAGE_CLOSEST_HIT: return VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
+			case SHADER_STAGE_MISS: return VK_SHADER_STAGE_MISS_BIT_KHR;
+			case SHADER_STAGE_INTERSECTION: return VK_SHADER_STAGE_INTERSECTION_BIT_KHR;
+			case SHADER_STAGE_CALLABLE: return VK_SHADER_STAGE_CALLABLE_BIT_KHR;
+			case SHADER_STAGE_TASK: return VK_SHADER_STAGE_TASK_BIT_NV;
+			case SHADER_STAGE_MESH: return VK_SHADER_STAGE_MESH_BIT_NV;
 		}
-		return VK_SHADER_STAGE_VERTEX_BIT;
+		assert(false && "invalid shader stage");
+		return static_cast<VkShaderStageFlagBits>(-1);
 	}
 
 	void Pipeline::createShaderModules(PipelineBuilder &builder){
@@ -275,9 +269,9 @@ namespace Fovea{
 			return;
 		}
 
-		std::vector<PipelineBuilder::ShaderStage> shaderStages;
+		std::vector<PipelineBuilder::PipelineStage> shaderStages;
 
-		for (int i=0; i<static_cast<int>(builder.shaderStages.size()); i++){
+		for (int i=0; i<SHADER_STAGE_COUNT; i++){
 			if (!builder.shaderStages[i].required) continue;
 			shaderStages.push_back(builder.shaderStages[i]);
 		}
@@ -297,8 +291,8 @@ namespace Fovea{
 		createInfo.pCode = reinterpret_cast<const uint32_t*>(code.data());
 		createInfo.codeSize = static_cast<uint32_t>(code.size());
 
-		if (vkCreateShaderModule(getInstance().logicalDevice.getDevice(), &createInfo, nullptr, &shaderModule) != VK_SUCCESS){
-			throw std::runtime_error("failed to create shader module");
+		if (vkCreateShaderModule(device->getDevice(), &createInfo, nullptr, &shaderModule) != VK_SUCCESS){
+			throw "failed to create shader module";
 		}
 	}
 }

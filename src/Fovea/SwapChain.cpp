@@ -1,5 +1,5 @@
 #include "Fovea/SwapChain.hpp"
-#include "Fovea/core.hpp"
+
 
 #include <limits>
 #include <stdexcept>
@@ -10,16 +10,17 @@ namespace Fovea{
 	}
 
 	SwapChain::~SwapChain(){
-		framebuffers.clear();
+		if (swapchain){
+			framebuffers.clear();
 
-		vkDestroySwapchainKHR(getInstance().logicalDevice.getDevice(),swapchain, nullptr);
+			vkDestroySwapchainKHR(device->getDevice(),swapchain, nullptr);
+			vkDestroyRenderPass(device->getDevice(), renderPass, nullptr);
 
-		vkDestroyRenderPass(getInstance().logicalDevice.getDevice(), renderPass, nullptr);
-
-		for (size_t i=0; i<static_cast<size_t>(framesInFlight); i++) {
-			vkDestroySemaphore(getInstance().logicalDevice.getDevice(), renderFinishedSemaphores[i], nullptr);
-			vkDestroySemaphore(getInstance().logicalDevice.getDevice(), imageAvailableSemaphores[i], nullptr);
-			vkDestroyFence(getInstance().logicalDevice.getDevice(), inFlightFences[i], nullptr);
+			for (size_t i=0; i<static_cast<size_t>(framesInFlight); i++) {
+				vkDestroySemaphore(device->getDevice(), renderFinishedSemaphores[i], nullptr);
+				vkDestroySemaphore(device->getDevice(), imageAvailableSemaphores[i], nullptr);
+				vkDestroyFence(device->getDevice(), inFlightFences[i], nullptr);
+			}
 		}
 	}
 	
@@ -40,11 +41,12 @@ namespace Fovea{
 	}
 
 	VkFormat SwapChain::findDepthFormat(){
-		return getInstance().physicalDevice.findSupportedFormat({VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT}, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
+		return device->getPhysicalDevice()->findSupportedFormat({VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT}, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
 	}
 
 	void SwapChain::createSwapchain(){
-		auto swapChainSupport = getInstance().physicalDevice.getSwapChainSupport();
+		PhysicalDevice* physicalDevice = device->getPhysicalDevice();
+		auto swapChainSupport = physicalDevice->getSwapChainSupport();
 
 		VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
 		VkPresentModeKHR presentMode = chooseSwapPresentMode(swapChainSupport.presentModes);
@@ -60,7 +62,7 @@ namespace Fovea{
 
 		VkSwapchainCreateInfoKHR createInfo = {};
 		createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-		createInfo.surface = getInstance().instance.getSurface();
+		createInfo.surface =  device->getInstance()->getSurface();
 		
 		// color buffer
 		createInfo.minImageCount = imageCount;
@@ -70,7 +72,10 @@ namespace Fovea{
 		createInfo.imageArrayLayers = 1;
 		createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
-		uint32_t queueFamilyIndices[] = {getInstance().physicalDevice.getFamily(PhysicalDeviceFamily::FAMILY_GRAPHIC).family, getInstance().physicalDevice.getFamily(PhysicalDeviceFamily::FAMILY_PRESENT).family};
+		const uint32_t graphicFamily = physicalDevice->getFamily(FAMILY_GRAPHIC).family;
+		const uint32_t presentFamily = physicalDevice->getPresentFamily();
+
+		uint32_t queueFamilyIndices[] = {graphicFamily, presentFamily};
 
 		if (queueFamilyIndices[0] != queueFamilyIndices[1]){
 			createInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
@@ -90,13 +95,13 @@ namespace Fovea{
 
 		createInfo.oldSwapchain = oldSwapChain == nullptr ? VK_NULL_HANDLE : oldSwapChain->swapchain;
 
-		if (vkCreateSwapchainKHR(getInstance().logicalDevice.getDevice(), &createInfo, nullptr, &swapchain) != VK_SUCCESS){
-			throw std::runtime_error("failed to create the swapchain");
+		if (vkCreateSwapchainKHR(device->getDevice(), &createInfo, nullptr, &swapchain) != VK_SUCCESS){
+			throw "failed to create the swapchain";
 		}
 
-		vkGetSwapchainImagesKHR(getInstance().logicalDevice.getDevice(), swapchain, &imageCount, nullptr);
+		vkGetSwapchainImagesKHR(device->getDevice(), swapchain, &imageCount, nullptr);
 		images.resize(imageCount);
-		vkGetSwapchainImagesKHR(getInstance().logicalDevice.getDevice(), swapchain, &imageCount, images.data());
+		vkGetSwapchainImagesKHR(device->getDevice(), swapchain, &imageCount, images.data());
 
 		imageFormat = surfaceFormat.format;
 		extent = extent;
@@ -136,11 +141,11 @@ namespace Fovea{
 		fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
 		for (size_t i = 0; i < static_cast<size_t>(framesInFlight); i++) {
-			if (vkCreateSemaphore(getInstance().logicalDevice.getDevice(), &semaphoreInfo, nullptr, &imageAvailableSemaphores[i]) != VK_SUCCESS ||
-				vkCreateSemaphore(getInstance().logicalDevice.getDevice(), &semaphoreInfo, nullptr, &renderFinishedSemaphores[i]) != VK_SUCCESS ||
-				vkCreateFence(getInstance().logicalDevice.getDevice(), &fenceInfo, nullptr, &inFlightFences[i]) != VK_SUCCESS)
+			if (vkCreateSemaphore(device->getDevice(), &semaphoreInfo, nullptr, &imageAvailableSemaphores[i]) != VK_SUCCESS ||
+				vkCreateSemaphore(device->getDevice(), &semaphoreInfo, nullptr, &renderFinishedSemaphores[i]) != VK_SUCCESS ||
+				vkCreateFence(device->getDevice(), &fenceInfo, nullptr, &inFlightFences[i]) != VK_SUCCESS)
 
-				throw std::runtime_error("failed to create synchronization objects for a frame!");
+				throw "failed to create synchronization objects for a frame!";
 		}
 	}
 
@@ -208,17 +213,14 @@ namespace Fovea{
 	}
 
 	VkResult SwapChain::acquireNextImage(uint32_t *imageIndex){
-		LogicalDevice &device = getInstance().logicalDevice;
-		vkWaitForFences(device.getDevice(), 1, &inFlightFences[currentFrame], VK_TRUE, std::numeric_limits<uint64_t>::max());
-		VkResult result = vkAcquireNextImageKHR(device.getDevice(), swapchain, std::numeric_limits<uint64_t>::max(), imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, imageIndex);
+		vkWaitForFences(device->getDevice(), 1, &inFlightFences[currentFrame], VK_TRUE, std::numeric_limits<uint64_t>::max());
+		VkResult result = vkAcquireNextImageKHR(device->getDevice(), swapchain, std::numeric_limits<uint64_t>::max(), imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, imageIndex);
 		return result;
 	}
 
-	VkResult SwapChain::submitCommandBuffer(VkCommandBuffer* buffers, uint32_t *imageIndex){
-		LogicalDevice &device = getInstance().logicalDevice;
-		
+	VkResult SwapChain::submitCommandBuffer(VkCommandBuffer* buffers, uint32_t *imageIndex){;
 		if (imagesInFlight[*imageIndex] != VK_NULL_HANDLE)
-			vkWaitForFences(device.getDevice(), 1, &imagesInFlight[*imageIndex], VK_TRUE, UINT64_MAX);
+			vkWaitForFences(device->getDevice(), 1, &imagesInFlight[*imageIndex], VK_TRUE, UINT64_MAX);
 		
 		imagesInFlight[*imageIndex] = inFlightFences[currentFrame];
 
@@ -238,9 +240,9 @@ namespace Fovea{
 		submitInfo.signalSemaphoreCount = 1;
 		submitInfo.pSignalSemaphores = signalSemaphores;
 
-		vkResetFences(device.getDevice(), 1, &inFlightFences[currentFrame]);
-		if (vkQueueSubmit(device.getQueue(PhysicalDeviceFamily::FAMILY_GRAPHIC), 1, &submitInfo, inFlightFences[currentFrame]) != VK_SUCCESS)
-			throw std::runtime_error("failed to submit draw command buffer!");
+		vkResetFences(device->getDevice(), 1, &inFlightFences[currentFrame]);
+		if (vkQueueSubmit(device->getQueue(QueueFamily::FAMILY_GRAPHIC, 0), 1, &submitInfo, inFlightFences[currentFrame]) != VK_SUCCESS)
+			throw "failed to submit draw command buffer";
 
 		VkPresentInfoKHR presentInfo = {};
 		presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
@@ -254,7 +256,7 @@ namespace Fovea{
 
 		presentInfo.pImageIndices = imageIndex;
 
-		auto result = vkQueuePresentKHR(device.getQueue(PhysicalDeviceFamily::FAMILY_PRESENT), &presentInfo);
+		auto result = vkQueuePresentKHR(device->getQueue(QueueFamily::FAMILY_PRESENT, 0), &presentInfo);
 
 		currentFrame = (currentFrame + 1) % framesInFlight;
 
@@ -327,7 +329,7 @@ namespace Fovea{
 		renderPassInfo.dependencyCount = 1;
 		renderPassInfo.pDependencies = &dependency;
 
-		if (vkCreateRenderPass(getInstance().logicalDevice.getDevice(), &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS)
-			throw std::runtime_error("failed to create render pass");	
+		if (vkCreateRenderPass(device->getDevice(), &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS)
+			throw "failed to create render pass";	
 	}
 }

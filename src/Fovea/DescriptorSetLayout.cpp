@@ -1,14 +1,18 @@
-#include "Fovea/core.hpp"
+
 #include "Fovea/DescriptorSetLayout.hpp"
 
-#include <stdexcept>
+#include <cassert>
 
 namespace Fovea{
 	DescriptorSetLayout::~DescriptorSetLayout(){
-		vkDestroyDescriptorSetLayout(getInstance().logicalDevice.getDevice(), setLayout, nullptr);
+		if (device){
+			vkDestroyDescriptorSetLayout(device->getDevice(), setLayout, nullptr);
+		}
 	}
 	
 	void DescriptorSetLayout::initialize(const DescriptorSetLayoutBuilder &builder){
+		assert(builder.device != nullptr && "cannot initialize a descriptor set layout without a valid device");
+		this->device = builder.device;
 		bindings = builder.bindings;
 
 		std::vector<VkDescriptorSetLayoutBinding> layoutBindings{};
@@ -21,8 +25,8 @@ namespace Fovea{
 		createInfo.bindingCount = static_cast<uint32_t>(layoutBindings.size());
 		createInfo.pBindings = layoutBindings.data();
 		
-		if (vkCreateDescriptorSetLayout(getInstance().logicalDevice.getDevice(), &createInfo, nullptr, &setLayout) != VK_SUCCESS){
-			throw std::runtime_error("failed to create descriptor set layout");
+		if (vkCreateDescriptorSetLayout(device->getDevice(), &createInfo, nullptr, &setLayout) != VK_SUCCESS){
+			throw "failed to create descriptor set layout";
 		}
 		
 	}

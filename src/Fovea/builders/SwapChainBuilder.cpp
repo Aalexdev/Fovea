@@ -19,4 +19,7 @@ namespace Fovea{
 		this->extent = extent;
 	}
 
+	void SwapChainBuilder::setDevice(LogicalDevice* device){
+		this->device = device;
+	}
 }

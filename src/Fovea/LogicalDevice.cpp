@@ -1,26 +1,68 @@
 #include "Fovea/LogicalDevice.hpp"
-#include "Fovea/core.hpp"
+#include "Fovea/CommandPool.hpp"
 
 #include <stdexcept>
+#include <cassert>
 
 namespace Fovea{
+
+	struct UniqueFamily : public PhysicalDevice::FamilyDetails{
+		UniqueFamily(const PhysicalDevice::FamilyDetails &other) : PhysicalDevice::FamilyDetails(other){};
+		UniqueFamily() = default;
+
+		std::vector<float> priorities{};
+	};
+
+	void LogicalDevice::createCommandPools(LogicalDeviceBuilder &builder){
+		auto families = physicalDevice->getEnabledFamilies();
+
+		for (int i=0; i<FAMILY_COUNT; i++){
+			if (families[i]){
+				CommandPool* pool = new CommandPool();
+				CommandPoolBuilder b;
+				b.setFamily(static_cast<QueueFamily>(i));
+				b.setLogicalDevice(this);
+				b.setFlag(builder.commandPoolFlags[i]);
+				pool->initialize(b);
+				commandPools[i] = pool;
+			} else {
+				commandPools[i] = nullptr;
+			}
+		}
+	}
+
 	void LogicalDevice::initialize(LogicalDeviceBuilder &builder){
-		std::vector<PhysicalDevice::FamilyDetails> families = getInstance().physicalDevice.getFamilies();
+		assert(builder.physicalDevice != nullptr && "cannot create a logical device without a valid physical device");
+		physicalDevice = builder.physicalDevice;
+		Instance* instance = physicalDevice->getInstance();
+
+		std::vector<PhysicalDevice::FamilyDetails> families = physicalDevice->getFamilies();
 		std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
 
-		std::vector<PhysicalDevice::FamilyDetails> uniqueFamilies;
+		std::vector<UniqueFamily> uniqueFamilies;
 
-		for (const auto &family : families){
+		for (UniqueFamily family : families){
 			bool isUnique = true;
+			queues[static_cast<size_t>(family.type)].queueCount = builder.requiredQueuesCount[static_cast<size_t>(family.type)];
 
-			for (const auto &uniqueFamilie : uniqueFamilies){
+			family.priorities = builder.queuePriorities[static_cast<size_t>(family.type)];
+
+			for (auto &uniqueFamilie : uniqueFamilies){
 				if (uniqueFamilie.family == family.family){
+
+					uniqueFamilie.priorities.insert(uniqueFamilie.priorities.end(), family.priorities.begin(), family.priorities.end());
+
 					isUnique = false;
 					break;
 				}
 			}
 
 			if (isUnique) uniqueFamilies.push_back(family);
+		}
+
+		for (int i=0; i<FAMILY_COUNT; i++){
+			if (queues[i].queueCount == 0) continue;
+			queues[i].queues = new VkQueue[queues[i].queueCount];
 		}
 
 		std::vector<float> priorities(uniqueFamilies.size());
@@ -31,16 +73,15 @@ namespace Fovea{
 			VkDeviceQueueCreateInfo queueCreateInfo = {};
 			queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
 			queueCreateInfo.queueFamilyIndex = queueFamily.family;
-			auto& priority = priorities[i];
 
-			queueCreateInfo.queueCount = 1;
+			queueCreateInfo.queueCount = static_cast<uint32_t>(queueFamily.priorities.size());
 			queueCreateInfo.queueFamilyIndex = queueFamily.family;
-			queueCreateInfo.pQueuePriorities = &priority;
+			queueCreateInfo.pQueuePriorities = queueFamily.priorities.data();
 			
 			queueCreateInfos.push_back(queueCreateInfo);
 		}
 
-		VkPhysicalDeviceFeatures features = getInstance().physicalDevice.getEnabledFeatures();
+		VkPhysicalDeviceFeatures features = physicalDevice->getEnabledFeatures();
 
 		VkDeviceCreateInfo createInfo = {};
 		createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
@@ -53,35 +94,48 @@ namespace Fovea{
 		createInfo.enabledExtensionCount = static_cast<uint32_t>(builder.requiredExtensions.size());
 		createInfo.ppEnabledExtensionNames = builder.requiredExtensions.data();
 
-		if (getInstance().instance.isValidationLayersEnabled()){
-			createInfo.enabledLayerCount = static_cast<uint32_t>(getInstance().instance.getValidationLayers().size());
-			createInfo.ppEnabledLayerNames = getInstance().instance.getValidationLayers().data();
+		if (instance->isValidationLayersEnabled()){
+			createInfo.enabledLayerCount = static_cast<uint32_t>(instance->getValidationLayers().size());
+			createInfo.ppEnabledLayerNames = instance->getValidationLayers().data();
 		} else {
 			createInfo.enabledLayerCount = 0;
 		}
 
-		if (vkCreateDevice(getInstance().physicalDevice.getDevice(), &createInfo, nullptr, &device) != VK_SUCCESS){
-			throw std::runtime_error("failed to create the logical device");
+		if (vkCreateDevice(physicalDevice->getDevice(), &createInfo, nullptr, &device) != VK_SUCCESS){
+			throw "failed to create the logical device";
 		}
 
-		queues.fill(VK_NULL_HANDLE);
-		for (int i=0; i<uniqueFamilies.size(); i++){
-			auto &family = uniqueFamilies[i];
-			auto &queue = queues[static_cast<size_t>(family.type)];
+		uint32_t queueIndices[FAMILY_COUNT];
+		for (int i=0; i<FAMILY_COUNT; i++){
+			queueIndices[i] = 0;
+		}
 
-			vkGetDeviceQueue(device, family.family, 0, &queues[static_cast<size_t>(family.type)]);
+		for (auto &f : families){
+			uint32_t *queueIndex = nullptr;
 
-			for (auto &f : families){
-				if (f.type == family.type) continue;
-				if (f.family == family.family){
-					queues[static_cast<size_t>(f.type)] = queue;
+			for (auto &uf : uniqueFamilies){
+				if (f.family == uf.family){
+					queueIndex = &queueIndices[static_cast<int>(uf.type)];
 				}
 			}
+
+			for (int i=0; i<builder.requiredQueuesCount[static_cast<int>(f.type)]; i++){
+				vkGetDeviceQueue(device, f.family, *queueIndex, &queues[static_cast<size_t>(f.type)].queues[i]);
+				(*queueIndex)++;
+			}
 		}
+
+		createCommandPools(builder);
 	}
 
 	LogicalDevice::~LogicalDevice(){
 		vkDestroyDevice(device, nullptr);
+
+		for (int i=0; i<FAMILY_COUNT; i++){
+			if (queues[i].queueCount > 0){
+				delete[] queues[i].queues;
+			}
+		}
 	}
 
 	VkDevice LogicalDevice::getDevice() const{
@@ -90,7 +144,7 @@ namespace Fovea{
 
 	void LogicalDevice::createImageWithInfo(const VkImageCreateInfo &imageInfo, VkMemoryPropertyFlags properties, VkImage &image, VkDeviceMemory &imageMemory){
 		if (vkCreateImage(device, &imageInfo, nullptr, &image) != VK_SUCCESS) {
-			throw std::runtime_error("failed to create image!");
+			throw "failed to create image !";
 		}
 
 		VkMemoryRequirements memRequirements;
@@ -99,14 +153,14 @@ namespace Fovea{
 		VkMemoryAllocateInfo allocInfo{};
 		allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
 		allocInfo.allocationSize = memRequirements.size;
-		allocInfo.memoryTypeIndex = getInstance().physicalDevice.findMemoryType(memRequirements.memoryTypeBits, properties);
+		allocInfo.memoryTypeIndex = physicalDevice->findMemoryType(memRequirements.memoryTypeBits, properties);
 
 		if (vkAllocateMemory(device, &allocInfo, nullptr, &imageMemory) != VK_SUCCESS) {
-			throw std::runtime_error("failed to allocate image memory!");
+			throw "failed to allocate image memory";
 		}
 
 		if (vkBindImageMemory(device, image, imageMemory, 0) != VK_SUCCESS) {
-			throw std::runtime_error("failed to bind image memory!");
+			throw "failed to bind image memory";
 		}
 	}
 
@@ -118,7 +172,7 @@ namespace Fovea{
 		bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
 		if (vkCreateBuffer(device, &bufferInfo, nullptr, &buffer) != VK_SUCCESS) {
-			throw std::runtime_error("failed to create buffer!");
+			throw "failed to create buffer";
 		}
 
 		VkMemoryRequirements memRequirements;
@@ -127,16 +181,24 @@ namespace Fovea{
 		VkMemoryAllocateInfo allocInfo{};
 		allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
 		allocInfo.allocationSize = memRequirements.size;
-		allocInfo.memoryTypeIndex = getInstance().physicalDevice.findMemoryType(memRequirements.memoryTypeBits, properties);
+		allocInfo.memoryTypeIndex = physicalDevice->findMemoryType(memRequirements.memoryTypeBits, properties);
 
 		if (vkAllocateMemory(device, &allocInfo, nullptr, &bufferMemory) != VK_SUCCESS) {
-			throw std::runtime_error("failed to allocate buffer memory!");
+			throw "failed to allocate buffer memory";
 		}
 
 		vkBindBufferMemory(device, buffer, bufferMemory, 0);
 	}
 
-	VkQueue LogicalDevice::getQueue(PhysicalDeviceFamily family){
-		return queues[static_cast<size_t>(family)];
+	VkQueue LogicalDevice::getQueue(QueueFamily family, uint32_t index){
+		return queues[family].queues[index];
+	}
+
+	Instance* LogicalDevice::getInstance(){
+		return physicalDevice->getInstance();
+	}
+
+	CommandPool* LogicalDevice::getCommandPool(QueueFamily family){
+		return commandPools[family];
 	}
 }

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../../vulkan/vulkan.h"
+#include "../LogicalDevice.hpp"
 
 #include <vector>
 
@@ -24,8 +25,10 @@ namespace Fovea{
 
 			void setDescriptors(const std::vector<Descriptor> &descriptors);
 			void setDescriptorSetCount(uint32_t count);
+			void setLogicalDevice(LogicalDevice* device);
 
 		private:
+			LogicalDevice* device = nullptr;
 			std::vector<Descriptor> descriptors;
 			uint32_t descriptorSetCount = 1;
 	};

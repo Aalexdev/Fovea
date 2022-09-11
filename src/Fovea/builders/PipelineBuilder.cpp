@@ -3,8 +3,8 @@
 namespace Fovea{
 
 	PipelineBuilder::PipelineBuilder(){
-		for (int i=0; i<shaderStages.size(); i++){
-			shaderStages[i].stage = static_cast<PipelineStage>(i);
+		for (int i=0; i<SHADER_STAGE_COUNT; i++){
+			shaderStages[i].stage = static_cast<ShaderStage>(i);
 		}	
 	}
 
@@ -81,8 +81,8 @@ namespace Fovea{
 		configInfo.dynamicStateInfo.flags = 0;
 	}
 
-	void PipelineBuilder::setShaderStage(PipelineStage stage, const std::filesystem::path &path){
-		auto &s = shaderStages[static_cast<size_t>(stage)];
+	void PipelineBuilder::setShaderStage(ShaderStage stage, const char *path){
+		auto &s = shaderStages[stage];
 		s.required = true;
 		s.path = path;
 	}
@@ -95,7 +95,7 @@ namespace Fovea{
 		config.subpass = subpass;
 	}
 
-	void PipelineBuilder::setPushConstant(size_t size, int stages){
+	void PipelineBuilder::setPushConstant(size_t size, VkPipelineStageFlags stages){
 		pushConstant.size = size;
 		pushConstant.stages = stages;
 		pushConstant.binding = 0;
@@ -119,4 +119,7 @@ namespace Fovea{
 		hasInstanceDescription = true;
 	}
 
+	void PipelineBuilder::setDevice(LogicalDevice* device){
+		this->device = device;
+	}
 }

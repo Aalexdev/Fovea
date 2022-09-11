@@ -1,20 +1,32 @@
 #include "Fovea/PhysicalDevice.hpp"
-#include "Fovea/core.hpp"
 
 #include <stdexcept>
+#include <cassert>
 #include <set>
+
+#define GET_FAMILY(familyType, vkFamily) { \
+	if (builder.requiredFamilies[familyType] && queueFamily.queueFlags & vkFamily){ \
+		families[familyType] = i; \
+		availableFamilies.set(familyType); \
+		this->families.push_back({i, QueueFamily::familyType});\
+	}}
 
 namespace Fovea{
 	void PhysicalDevice::initialize(PhysicalDeviceBuidler &builder){
+		assert(builder.instance != nullptr && "cannot create a physical device without a valid instance");
+		instance = builder.instance;
+
+		enabledFamiles = builder.requiredFamilies;
+
 		uint32_t deviceCount = 0;
-		vkEnumeratePhysicalDevices(getInstance().instance.getInstance(), &deviceCount, nullptr);
+		vkEnumeratePhysicalDevices(instance->getInstance(), &deviceCount, nullptr);
 
 		if (deviceCount == 0){
-			throw std::runtime_error("cannot found a GPU with a vulkan support");
+			throw "cannot found a GPU with a vulkan support";
 		}
 
 		std::vector<VkPhysicalDevice> devices(deviceCount);
-		vkEnumeratePhysicalDevices(getInstance().instance.getInstance(), &deviceCount, devices.data());
+		vkEnumeratePhysicalDevices(instance->getInstance(), &deviceCount, devices.data());
 
 		for (auto &device : devices){
 			if (isSuitableDevice(device, builder)){
@@ -24,7 +36,7 @@ namespace Fovea{
 		}
 
 		if (physicalDevice == VK_NULL_HANDLE){
-			throw std::runtime_error("failed to found a suitable GPU");
+			throw "failed to found a suitable GPU";
 		}
 		
 		features = builder.getFeatures();
@@ -32,11 +44,20 @@ namespace Fovea{
 	}
 
 	PhysicalDevice::~PhysicalDevice(){
+		if (instance == nullptr){
+			instance = nullptr;
+			physicalDevice = VK_NULL_HANDLE;
+		}
 	}
 
 	void PhysicalDevice::checkDeviceExtensionSupport(VkPhysicalDevice device, PhysicalDeviceBuidler &builder){
-
+		
 	}
+
+	const std::bitset<FAMILY_COUNT>& PhysicalDevice::getEnabledFamilies(){
+		return enabledFamiles;
+	}
+
 
 	bool PhysicalDevice::isSuitableDevice(VkPhysicalDevice device, PhysicalDeviceBuidler &builder){
 		auto families = getFamilies(device, builder);
@@ -51,9 +72,9 @@ namespace Fovea{
 		return swapChainAdequate && checkFeatures(supportedFeatures, builder);
 	}
 
-	std::array<uint32_t, static_cast<size_t>(PhysicalDeviceFamily::FAMILY_COUNT)> PhysicalDevice::getFamilies(VkPhysicalDevice physicalDevice, PhysicalDeviceBuidler &builder){
-		std::bitset<static_cast<size_t>(PhysicalDeviceFamily::FAMILY_COUNT)> availableFamilies;
-		std::array<uint32_t, static_cast<size_t>(PhysicalDeviceFamily::FAMILY_COUNT)> families;
+	std::array<uint32_t, FAMILY_COUNT> PhysicalDevice::getFamilies(VkPhysicalDevice physicalDevice, PhysicalDeviceBuidler &builder){
+		std::bitset<FAMILY_COUNT> availableFamilies;
+		std::array<uint32_t, FAMILY_COUNT> families;
 
 		// query availables queues
 		uint32_t queueFamilyCount;
@@ -66,48 +87,20 @@ namespace Fovea{
 		for (const auto &queueFamily : queueFamilies){
 			if (queueFamily.queueCount == 0) continue;
 
-			// graphic queue
-			if (builder.requiredFamilies[static_cast<size_t>(PhysicalDeviceFamily::FAMILY_GRAPHIC)] && queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT){
-				families[static_cast<size_t>(PhysicalDeviceFamily::FAMILY_GRAPHIC)] = i;
-				availableFamilies.set(static_cast<size_t>(PhysicalDeviceFamily::FAMILY_GRAPHIC));
-				this->families.push_back({i, PhysicalDeviceFamily::FAMILY_GRAPHIC});
-			}
-
-			// compute queue
-			if (builder.requiredFamilies[static_cast<size_t>(PhysicalDeviceFamily::FAMILY_COMPUTE)] && queueFamily.queueFlags & VK_QUEUE_COMPUTE_BIT){
-				families[static_cast<size_t>(PhysicalDeviceFamily::FAMILY_COMPUTE)] = i;
-				availableFamilies.set(static_cast<size_t>(PhysicalDeviceFamily::FAMILY_COMPUTE));
-				this->families.push_back({i, PhysicalDeviceFamily::FAMILY_COMPUTE});
-			}
-
-			// transfer queue
-			if (builder.requiredFamilies[static_cast<size_t>(PhysicalDeviceFamily::FAMILY_TRANSFER)] && queueFamily.queueFlags & VK_QUEUE_TRANSFER_BIT){
-				families[static_cast<size_t>(PhysicalDeviceFamily::FAMILY_TRANSFER)] = i;
-				availableFamilies.set(static_cast<size_t>(PhysicalDeviceFamily::FAMILY_TRANSFER));
-				this->families.push_back({i, PhysicalDeviceFamily::FAMILY_TRANSFER});
-			}
-
-			// protected queue
-			if (builder.requiredFamilies[static_cast<size_t>(PhysicalDeviceFamily::FAMILY_PROTECTED)] && queueFamily.queueFlags & VK_QUEUE_PROTECTED_BIT){
-				families[static_cast<size_t>(PhysicalDeviceFamily::FAMILY_PROTECTED)] = i;
-				availableFamilies.set(static_cast<size_t>(PhysicalDeviceFamily::FAMILY_PROTECTED));
-				this->families.push_back({i, PhysicalDeviceFamily::FAMILY_PROTECTED});
-			}
-
-			// spars queue
-			if (builder.requiredFamilies[static_cast<size_t>(PhysicalDeviceFamily::FAMILY_SPARSE_BINDING)] && queueFamily.queueFlags & VK_QUEUE_SPARSE_BINDING_BIT){
-				families[static_cast<size_t>(PhysicalDeviceFamily::FAMILY_SPARSE_BINDING)] = i;
-				availableFamilies.set(static_cast<size_t>(PhysicalDeviceFamily::FAMILY_SPARSE_BINDING));
-				this->families.push_back({i, PhysicalDeviceFamily::FAMILY_SPARSE_BINDING});
-			}
+			GET_FAMILY(FAMILY_GRAPHIC, VK_QUEUE_GRAPHICS_BIT);
+			GET_FAMILY(FAMILY_COMPUTE, VK_QUEUE_COMPUTE_BIT);
+			GET_FAMILY(FAMILY_TRANSFER, VK_QUEUE_TRANSFER_BIT);
+			GET_FAMILY(FAMILY_PROTECTED, VK_QUEUE_PROTECTED_BIT);
+			GET_FAMILY(FAMILY_SPARSE_BINDING, VK_QUEUE_SPARSE_BINDING_BIT);
 
 			// present
 			VkBool32 presentSupport = false;
-			vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, i, getInstance().instance.getSurface(), &presentSupport);
-			if (builder.requiredFamilies[static_cast<size_t>(PhysicalDeviceFamily::FAMILY_PRESENT)] && presentSupport){
-				families[static_cast<size_t>(PhysicalDeviceFamily::FAMILY_PRESENT)] = i;
-				availableFamilies.set(static_cast<size_t>(PhysicalDeviceFamily::FAMILY_PRESENT));
-				this->families.push_back({i, PhysicalDeviceFamily::FAMILY_PRESENT});
+			vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, i, instance->getSurface(), &presentSupport);
+
+			if (builder.requiredFamilies[FAMILY_PRESENT] && presentSupport){
+				families[FAMILY_PRESENT] = i;
+				availableFamilies.set(FAMILY_PRESENT);
+				this->families.push_back({i, QueueFamily::FAMILY_PRESENT});
 			}
 
 			if (availableFamilies == builder.requiredFamilies) break;
@@ -116,7 +109,7 @@ namespace Fovea{
 
 
 		if (availableFamilies != builder.requiredFamilies)
-			throw std::runtime_error("failed to find the wanted queues");
+			throw "failed to find the wanted queues";
 		
 		return families;
 	}
@@ -142,23 +135,25 @@ namespace Fovea{
 
 
 	PhysicalDevice::SwapChainSupport PhysicalDevice::getSwapChainSupport(VkPhysicalDevice device){
+		VkSurfaceKHR surface =  instance->getSurface();
+
 		SwapChainSupport details;
-		vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, getInstance().instance.getSurface(), &details.capabilities);
+		vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface, &details.capabilities);
 
 		uint32_t formatCount;
-		vkGetPhysicalDeviceSurfaceFormatsKHR(device, getInstance().instance.getSurface(), &formatCount, nullptr);
+		vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, nullptr);
 
 		if (formatCount != 0){
 			details.formats.resize(formatCount);
-			vkGetPhysicalDeviceSurfaceFormatsKHR(device, getInstance().instance.getSurface(), &formatCount, details.formats.data());
+			vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, details.formats.data());
 		}
 
 		uint32_t presentModeCount;
-		vkGetPhysicalDeviceSurfacePresentModesKHR(device, getInstance().instance.getSurface(), &presentModeCount, nullptr);
+		vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, nullptr);
 
 		if (presentModeCount != 0){
 			details.presentModes.resize(presentModeCount);
-			vkGetPhysicalDeviceSurfacePresentModesKHR(device, getInstance().instance.getSurface(), &presentModeCount, details.presentModes.data());
+			vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, details.presentModes.data());
 		}
 
 		return details;
@@ -177,11 +172,11 @@ namespace Fovea{
 		return true;	
 	}
 
-	PhysicalDevice::FamilyDetails PhysicalDevice::getFamily(PhysicalDeviceFamily family) const{
+	PhysicalDevice::FamilyDetails PhysicalDevice::getFamily(QueueFamily family) const{
 		for (auto &f : families){
 			if (f.type == family) return f;
 		}
-		throw std::runtime_error("failed to found the given family");
+		throw "failed to found the given family";
 	}
 
 	VkFormat PhysicalDevice::findSupportedFormat(const std::vector<VkFormat> &candidates, VkImageTiling tiling, VkFormatFeatureFlags features) {
@@ -196,7 +191,7 @@ namespace Fovea{
 				return format;
 			}
 		}
-		throw std::runtime_error("failed to find supported format!");
+		throw "failed to find supported format";
 	}
 
 	uint32_t PhysicalDevice::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties){
@@ -209,10 +204,10 @@ namespace Fovea{
 			}
 		}
 
-		throw std::runtime_error("failed to find suitable memory type");
+		throw "failed to find suitable memory type";
 	}
 
-	VkPhysicalDeviceProperties PhysicalDevice::getProperties(){
+	VkPhysicalDeviceProperties& PhysicalDevice::getProperties(){
 		return properties;
 	}
 
@@ -222,5 +217,13 @@ namespace Fovea{
 
 	VkPhysicalDevice PhysicalDevice::getDevice(){
 		return physicalDevice;
+	}
+
+	Instance* PhysicalDevice::getInstance(){
+		return instance;
+	}
+
+	uint32_t PhysicalDevice::getPresentFamily(){
+		return presentFamily;
 	}
 }

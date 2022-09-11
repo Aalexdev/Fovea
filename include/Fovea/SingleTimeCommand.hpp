@@ -1,22 +1,24 @@
 #pragma once
 
 #include "../vulkan/vulkan.h"
+#include "LogicalDevice.hpp"
+#include "CommandPool.hpp"
 
 namespace Fovea{
 	class SingleTimeCommand{
 		public:
-			SingleTimeCommand();
+			SingleTimeCommand(LogicalDevice* device, QueueFamily family, uint32_t queueIndex);
 			~SingleTimeCommand();
 
-			static void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
-			static void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
-			static void copyBuffer(VkBuffer src, VkBuffer dst, VkBufferCopy copy);
-
-			operator VkCommandBuffer() const {return commandBuffer;}
-		private:
 			void begin();
 			void end();
+			VkCommandBuffer getCommandBuffer();
 
+		private:
 			VkCommandBuffer commandBuffer = VK_NULL_HANDLE;
+			VkQueue queue = VK_NULL_HANDLE;
+			LogicalDevice* device = nullptr;
+			CommandPool* commandPool = nullptr;
+
 	};
 }

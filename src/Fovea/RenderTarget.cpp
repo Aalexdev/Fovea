@@ -1,8 +1,8 @@
 #include "Fovea/RenderTarget.hpp"
 #include "Fovea/Framebuffer.hpp"
-#include "Fovea/core.hpp"
 
 #include <stdexcept>
+#include <cassert>
 
 namespace Fovea{
 	RenderTarget::~RenderTarget(){
@@ -10,10 +10,13 @@ namespace Fovea{
 			delete framebuffer;
 		}
 
-		vkDestroyRenderPass(getInstance().logicalDevice.getDevice(), renderPass, nullptr);
+		vkDestroyRenderPass(device->getDevice(), renderPass, nullptr);
 	}
 
 	void RenderTarget::initialize(RenderTargetBuilder &builder){
+		assert(builder.device != nullptr && "cannot create a render target without a valid device");
+		
+		device = builder.device;
 		viewport.x = 0.f;
 		viewport.y = 0.f;
 		viewport.minDepth = 0.f;
@@ -156,8 +159,8 @@ namespace Fovea{
 		createInfo.dependencyCount = 1;
 		createInfo.pDependencies = &dependency;
 
-		if (vkCreateRenderPass(getInstance().logicalDevice.getDevice(), &createInfo, nullptr, &renderPass) != VK_SUCCESS){
-			throw std::runtime_error("failed to create render target render pass");
+		if (vkCreateRenderPass(device->getDevice(), &createInfo, nullptr, &renderPass) != VK_SUCCESS){
+			throw "failed to create render target render pass";
 		}
 	}
 

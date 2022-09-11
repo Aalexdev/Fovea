@@ -1,9 +1,10 @@
 #include "Fovea/DescriptorSet.hpp"
-#include "Fovea/core.hpp"
+
 #include "Fovea/DescriptorWriter.hpp"
 
 #include <unordered_map>
 #include <stdexcept>
+#include <cassert>
 
 namespace Fovea{
 
@@ -15,12 +16,15 @@ namespace Fovea{
 	}
 
 	DescriptorSet::~DescriptorSet(){
-		delete[] sets;
-		delete[] buffers;
-		if (buffer) delete[] buffer;
+		if (device){
+			delete[] sets;
+			delete[] buffers;
+			if (buffer) delete[] buffer;
+		}
 	}
 
 	void DescriptorSet::initialize(DescriptorSetBuilder &builder){
+		assert(builder.device != nullptr && "cannot create a descriptor set without a valid device");
 		sets = new VkDescriptorSet[builder.descriptorSetCount];
 		buffers = new BufferRange[builder.descriptorSetCount];
 
@@ -55,7 +59,7 @@ namespace Fovea{
 		DescriptorSetLayoutBuilder layoutBuilder;
 
 		for (auto &d : builder.descriptors){
-			layoutBuilder.AddBinding(d.binding, d.type, d.stage, d.type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER ? d.imageCount : 1);
+			layoutBuilder.addBinding(d.binding, d.type, d.stage, d.type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER ? d.imageCount : 1);
 		}
 
 		layout.initialize(layoutBuilder);
@@ -68,7 +72,7 @@ namespace Fovea{
 
 			if (d.type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER){
 				buffers[i].size = d.bufferSize;
-				buffers[i].alignement = getAlignment(d.bufferSize, getInstance().physicalDevice.getProperties().limits.minUniformBufferOffsetAlignment);
+				buffers[i].alignement = getAlignment(d.bufferSize, device->getPhysicalDevice()->getProperties().limits.minUniformBufferOffsetAlignment);
 
 				buffers[i].offset = offset;
 
@@ -102,7 +106,7 @@ namespace Fovea{
 
 	void DescriptorSet::createDescriptorSets(DescriptorSetBuilder &builder){
 		for (uint32_t i=0; i<descriptorSetCount; i++){
-			DescriptorWriter writer(layout, pool);
+			DescriptorWriter writer(device, &layout, &pool);
 			
 			for (auto &d : builder.descriptors){
 
@@ -113,7 +117,7 @@ namespace Fovea{
 						break;
 					}
 					case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER: writer.writeImages(d.binding, d.imageCount, d.imageInfos.data()); break;
-					default: throw std::runtime_error("invalid descriptor type"); break;
+					default: throw "invalid descriptor type"; break;
 				}
 			}
 
@@ -124,7 +128,7 @@ namespace Fovea{
 	void DescriptorSet::setDescriptorImage(uint32_t setIndex, uint32_t binding, uint32_t index, VkDescriptorImageInfo info){
 		builder.descriptors[binding].imageInfos[index] = info;
 
-		DescriptorWriter writer(layout, pool);
+		DescriptorWriter writer(device, &layout, &pool);
 
 		auto &d = builder.descriptors[binding];
 		writer.writeImages(d.binding, d.imageCount, d.imageInfos.data());

@@ -1,5 +1,5 @@
 #include "Fovea/Framebuffer.hpp"
-#include "Fovea/core.hpp"
+
 
 #include <stdexcept>
 #include <cassert>
@@ -14,7 +14,7 @@ namespace Fovea{
 	}
 
 	void Framebuffer::destroy(){
-		VkDevice device = getInstance().logicalDevice.getDevice();
+		VkDevice device = this->device->getDevice();
 		for (auto &color : colorAttachments){
 			if (!color.image.custom){
 				vkDestroyImage(device, color.image, nullptr);
@@ -46,6 +46,9 @@ namespace Fovea{
 	}
 
 	void Framebuffer::initialize(FramebufferBuilder &builder){
+		assert(builder.device != nullptr && "cannot create a framebuffer without a valid device");
+		device = builder.device;
+
 		colorAttachments.resize(builder.attachments.attachments.size());
 		extent = builder.extent;
 
@@ -130,8 +133,8 @@ namespace Fovea{
 	VkImage Framebuffer::createColorAttachmentImage(FramebufferBuilder &builder, FramebufferAttachments::Attachment &attachment, VkDeviceMemory *imageMemory){
 		VkImageCreateInfo createInfo = {};
 
-		uint32_t queueFamily = getInstance().physicalDevice.getFamily(PhysicalDeviceFamily::FAMILY_GRAPHIC).family;
-
+		uint32_t queueFamily = device->getPhysicalDevice()->getFamily(QueueFamily::FAMILY_GRAPHIC).family;
+		
 		createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
 
 		createInfo.extent.width = builder.extent.width;
@@ -145,14 +148,14 @@ namespace Fovea{
 		createInfo.arrayLayers = 1;
 		createInfo.samples = attachment.samples;
 		createInfo.tiling = attachment.tiling;
-		createInfo.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+		createInfo.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT;
 		createInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 		createInfo.queueFamilyIndexCount = 1;
 		createInfo.pQueueFamilyIndices = &queueFamily;
 		createInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
 		VkImage image = VK_NULL_HANDLE;
-		getInstance().logicalDevice.createImageWithInfo(createInfo, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, image, *imageMemory);
+		device->createImageWithInfo(createInfo, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, image, *imageMemory);
 		return image;
 	}
 
@@ -174,15 +177,15 @@ namespace Fovea{
 		createInfo.subresourceRange = subResourceRange;
 
 		VkImageView imageView = VK_NULL_HANDLE;
-		if (vkCreateImageView(getInstance().logicalDevice.getDevice(), &createInfo, nullptr, &imageView) != VK_SUCCESS){
-			throw std::runtime_error("failed to create color attachment image view");
+		if (vkCreateImageView(device->getDevice(), &createInfo, nullptr, &imageView) != VK_SUCCESS){
+			throw "failed to create color attachment image view";
 		}
 
 		return imageView;
 	}
 
 	VkImage Framebuffer::createDepthAttachmentImage(FramebufferBuilder &builder){
-		uint32_t queueFamily = getInstance().physicalDevice.getFamily(PhysicalDeviceFamily::FAMILY_GRAPHIC).family;
+		uint32_t queueFamily = device->getPhysicalDevice()->getFamily(QueueFamily::FAMILY_GRAPHIC).family;
 
 		VkImageCreateInfo createInfo = {};
 		createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -198,14 +201,14 @@ namespace Fovea{
 		createInfo.arrayLayers = 1;
 		createInfo.samples = VK_SAMPLE_COUNT_1_BIT;
 		createInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
-		createInfo.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+		createInfo.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT;
 		createInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 		createInfo.queueFamilyIndexCount = 1;
 		createInfo.pQueueFamilyIndices = &queueFamily;
 		createInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
 		VkImage image = VK_NULL_HANDLE;
-		getInstance().logicalDevice.createImageWithInfo(createInfo, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, image, depthImageMemory);
+		device->createImageWithInfo(createInfo, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, image, depthImageMemory);
 
 		return image;
 	}
@@ -226,8 +229,8 @@ namespace Fovea{
 		createInfo.subresourceRange = subResourceRange;
 
 		VkImageView imageView = VK_NULL_HANDLE;
-		if (vkCreateImageView(getInstance().logicalDevice.getDevice(), &createInfo, nullptr, &imageView) != VK_SUCCESS){
-			throw std::runtime_error("failed to create depth attachment image view");
+		if (vkCreateImageView(device->getDevice(), &createInfo, nullptr, &imageView) != VK_SUCCESS){
+			throw "failed to create depth attachment image view";
 		}
 
 		return imageView;
@@ -312,8 +315,8 @@ namespace Fovea{
 		createInfo.dependencyCount = 1;
 		
 		VkRenderPass renderPass = VK_NULL_HANDLE;
-		if (vkCreateRenderPass(getInstance().logicalDevice.getDevice(), &createInfo, nullptr, &renderPass) != VK_SUCCESS){
-			throw std::runtime_error("failed to create render pass");
+		if (vkCreateRenderPass(device->getDevice(), &createInfo, nullptr, &renderPass) != VK_SUCCESS){
+			throw "failed to create render pass";
 		}
 
 		return renderPass;
@@ -344,12 +347,10 @@ namespace Fovea{
 		createInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
 		createInfo.pAttachments = attachments.data();
 		createInfo.layers = 1;
-
-		printf("%d, %d\n", extent.width, extent.height);
 		
 		VkFramebuffer framebuffer = VK_NULL_HANDLE;
-		if (vkCreateFramebuffer(getInstance().logicalDevice.getDevice(), &createInfo, nullptr, &framebuffer) != VK_SUCCESS){
-			throw std::runtime_error("failed to create framebuffer");
+		if (vkCreateFramebuffer(device->getDevice(), &createInfo, nullptr, &framebuffer) != VK_SUCCESS){
+			throw "failed to create framebuffer";
 		}
 		
 		return framebuffer;

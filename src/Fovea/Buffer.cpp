@@ -1,4 +1,4 @@
-#include "Fovea/core.hpp"
+
 #include "Fovea/Buffer.hpp"
 
 namespace Fovea{
@@ -19,7 +19,11 @@ namespace Fovea{
 			destroy();
 		}
 
-		getInstance().logicalDevice.createBuffer(bufferSize, usageFlags, memoryPropertyFlags, buffer, memory);
+		device->createBuffer(bufferSize, usageFlags, memoryPropertyFlags, buffer, memory);
+	}
+
+	void Buffer::initialize(LogicalDevice* device){
+		this->device = device;
 	}
 
 	void Buffer::setInstanceProperties(VkDeviceSize instanceSize, VkDeviceSize minOffsetAlignement){
@@ -33,21 +37,22 @@ namespace Fovea{
 	}
 
 	void Buffer::destroy(){
-		VkDevice device = getInstance().logicalDevice.getDevice();
-
 		unmap();
-		vkDestroyBuffer(device, buffer, nullptr);
-		vkFreeMemory(device, memory, nullptr);
+
+		if (buffer){
+			vkDestroyBuffer(device->getDevice(), buffer, nullptr);
+			vkFreeMemory(device->getDevice(), memory, nullptr);
+		}
 	}
 
 
 	VkResult Buffer::map(VkDeviceSize size, VkDeviceSize offset){
-		return vkMapMemory(getInstance().logicalDevice.getDevice(), memory, offset, size, 0, &mapped);
+		return vkMapMemory(device->getDevice(), memory, offset, size, 0, &mapped);
 	}
 
 	void Buffer::unmap(){
 		if (mapped == nullptr) return;
-		vkUnmapMemory(getInstance().logicalDevice.getDevice(), memory);
+		vkUnmapMemory(device->getDevice(), memory);
 		mapped = nullptr;
 	}
 
@@ -68,7 +73,7 @@ namespace Fovea{
 		mappedRange.memory = memory;
 		mappedRange.offset = offset;
 		mappedRange.size = size;
-		return vkFlushMappedMemoryRanges(getInstance().logicalDevice.getDevice(), 1, &mappedRange);
+		return vkFlushMappedMemoryRanges(device->getDevice(), 1, &mappedRange);
 	}
 
 	VkDescriptorBufferInfo Buffer::descriptorInfo(VkDeviceSize size, VkDeviceSize offset){
@@ -81,7 +86,7 @@ namespace Fovea{
 		mappedRange.memory = memory;
 		mappedRange.offset = offset;
 		mappedRange.size = size;
-		return vkInvalidateMappedMemoryRanges(getInstance().logicalDevice.getDevice(), 1, &mappedRange);
+		return vkInvalidateMappedMemoryRanges(device->getDevice(), 1, &mappedRange);
 	}
 
 	void Buffer::writeToIndex(void* data, int index){

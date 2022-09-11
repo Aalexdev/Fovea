@@ -2,6 +2,7 @@
 
 #include "FramebufferBuilder.hpp"
 #include "../Framebuffer.hpp"
+#include "../LogicalDevice.hpp"
 
 #include <vector>
 
@@ -23,6 +24,7 @@ namespace Fovea{
 			void setAttachmentClearColor(uint32_t attachment, ClearColor color);
 
 		private:
+			LogicalDevice* device = nullptr;
 			std::vector<ClearColor> clearColors;
 			float depthClear = 1.f;
 			uint32_t stencilClear = 0;

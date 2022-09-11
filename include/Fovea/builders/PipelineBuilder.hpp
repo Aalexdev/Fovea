@@ -1,9 +1,10 @@
 #pragma once
 
 #include "../../vulkan/vulkan.h"
+#include "../enum.hpp"
+#include "../LogicalDevice.hpp"
 
 #include <vector>
-#include <array>
 #include <filesystem>
 
 namespace Fovea{
@@ -24,30 +25,6 @@ namespace Fovea{
 		uint32_t subpass = 0;
 	};
 
-	enum PipelineStage{
-		VERTEX,
-		GEOMETRY,
-		FRAGMENT,
-		COMPUTE,
-		
-		STAGE_COUNT
-	};
-
-	enum AttributFormat{
-		FLOAT = VK_FORMAT_R32_SFLOAT,
-		FLOAT_VEC2 = VK_FORMAT_R32G32_SFLOAT,
-		FLOAT_VEC3 = VK_FORMAT_R32G32B32_SFLOAT,
-		FLOAT_VEC4 = VK_FORMAT_R32G32B32A32_SFLOAT,
-		INT = VK_FORMAT_R32_SINT,
-		INT_VEC2 = VK_FORMAT_R32G32_SINT,
-		INT_VEC3 = VK_FORMAT_R32G32B32_SINT,
-		INT_VEC4 = VK_FORMAT_R32G32B32A32_SINT,
-		UNSGINED_INT = VK_FORMAT_R32_UINT,
-		UNSGINED_INT_VEC2 = VK_FORMAT_R32G32_UINT,
-		UNSGINED_INT_VEC3 = VK_FORMAT_R32G32B32_UINT,
-		UNSGINED_INT_VEC4 = VK_FORMAT_R32G32B32A32_UINT,
-	};
-
 	struct PipelineVertexDescription{
 		VkVertexInputBindingDescription bindingDescription;
 		std::vector<VkVertexInputAttributeDescription> attributeDescriptions{};
@@ -62,40 +39,38 @@ namespace Fovea{
 			PipelineBuilder();
 			PipelineConfigInfo* operator->() {return &config;}
 
-			void setShaderStage(PipelineStage stage, const std::filesystem::path &path);
+			void setDevice(LogicalDevice* device);
+			void setShaderStage(ShaderStage stage, const char* path);
 
 			template<typename T>
-			void setPushConstant(int stages = PipelineStage::VERTEX | PipelineStage::FRAGMENT){
+			void setPushConstant(VkPipelineStageFlags stages = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_VERTEX_SHADER_BIT){
 				setPushConstant(sizeof(T), stages);
 			}
 			
-			void setPushConstant(size_t size, int stages);
-
+			void setPushConstant(size_t size, VkPipelineStageFlags stages);
 			void setRenderPass(VkRenderPass renderPass);
 			void setSubpass(uint32_t subpass);
-
 			void setBase(Pipeline* base);
-
 			void pushSet(DescriptorSet* sets);
-
 
 			void setVertexDescription(const PipelineVertexDescription &description);
 			void setInstanceDescription(const PipelineVertexDescription &description);
 			
 		private:
-			struct ShaderStage{
+			struct PipelineStage{
 				bool required = false;
 				std::filesystem::path path;
-				PipelineStage stage;
+				ShaderStage stage;
 			};
 
 			struct PushConstant{
 				std::size_t size;
-				int stages;
+				VkPipelineStageFlags stages;
 				std::uint8_t binding = 0;
 			};
 
-			std::array<ShaderStage, static_cast<size_t>(PipelineStage::STAGE_COUNT)> shaderStages;
+			LogicalDevice* device = nullptr;
+			PipelineStage shaderStages[SHADER_STAGE_COUNT];
 
 			PipelineConfigInfo config;
 			PushConstant pushConstant;

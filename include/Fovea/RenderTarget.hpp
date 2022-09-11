@@ -27,6 +27,7 @@ namespace Fovea{
 		private:
 			void createRenderPass(RenderTargetBuilder &builder);
 
+			LogicalDevice* device = nullptr;
 			std::vector<VkClearValue> clearValues;
 			bool customFramebuffer = false;
 			Framebuffer* framebuffer = nullptr;

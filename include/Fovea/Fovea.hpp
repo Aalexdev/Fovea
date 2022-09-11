@@ -15,7 +15,7 @@
 
 #include "Buffer.hpp"
 #include "CommandPool.hpp"
-#include "core.hpp"
+
 #include "DescriptorPool.hpp"
 #include "DescriptorSet.hpp"
 #include "DescriptorSetLayout.hpp"
@@ -28,7 +28,6 @@
 #include "PhysicalDevice.hpp"
 #include "Pipeline.hpp"
 #include "PipelineLibrary.hpp"
-#include "Renderer.hpp"
 #include "RenderTarget.hpp"
 #include "RenderTargetLibrary.hpp"
 #include "SingleTimeCommand.hpp"

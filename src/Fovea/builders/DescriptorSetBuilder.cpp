@@ -8,4 +8,8 @@ namespace Fovea{
 	void DescriptorSetBuilder::setDescriptorSetCount(uint32_t count){
 		descriptorSetCount = count;
 	}
+
+	void DescriptorSetBuilder::setLogicalDevice(LogicalDevice* device){
+		this->device = device;
+	}
 }

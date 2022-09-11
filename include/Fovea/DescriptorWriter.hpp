@@ -2,6 +2,7 @@
 
 #include "DescriptorSetLayout.hpp"
 #include "DescriptorPool.hpp"
+#include "LogicalDevice.hpp"
 
 #include "../vulkan/vulkan.h"
 
@@ -10,13 +11,12 @@
 namespace Fovea{
 	class DescriptorWriter{
 		public:
-			DescriptorWriter(DescriptorSetLayout &setLayout, DescriptorPool &pool){
-				initialize(setLayout, pool);
+			DescriptorWriter(LogicalDevice* device, DescriptorSetLayout* setLayout, DescriptorPool* pool){
+				initialize(device, setLayout, pool);
 			}
 
-			void initialize(DescriptorSetLayout &setLayout, DescriptorPool &pool);
+			void initialize(LogicalDevice* device, DescriptorSetLayout* setLayout, DescriptorPool* pool);
 			
-		
 			void writeBuffer(uint32_t binding, VkDescriptorBufferInfo *bufferInfo);
 			void writeImage(uint32_t binding, VkDescriptorImageInfo *imageInfo);
 			void writeImages(uint32_t binding, uint32_t imageCount, VkDescriptorImageInfo *imageInfos);
@@ -25,8 +25,9 @@ namespace Fovea{
 			void overwrite(VkDescriptorSet &set);
 
 		private:
-			DescriptorSetLayout* setLayout;
-			DescriptorPool* pool;
-			std::vector<VkWriteDescriptorSet> writes;
+			LogicalDevice* device = nullptr;
+			DescriptorSetLayout* setLayout = nullptr;
+			DescriptorPool* pool = nullptr;
+			std::vector<VkWriteDescriptorSet> writes{};
 	};
 }

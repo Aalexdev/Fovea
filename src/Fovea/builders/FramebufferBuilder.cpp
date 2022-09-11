@@ -36,4 +36,8 @@ namespace Fovea{
 	void FramebufferBuilder::addDepthAttachmentImageView(VkImageView dephtImageView){
 		this->depthImageView = dephtImageView;
 	}
+
+	void FramebufferBuilder::setLogicalDevice(LogicalDevice* device){
+		this->device = device;
+	}
 }

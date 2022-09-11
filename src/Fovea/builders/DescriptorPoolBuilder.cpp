@@ -12,4 +12,9 @@ namespace Fovea{
 	void DescriptorPoolBuilder::addPoolSize(VkDescriptorType type, uint32_t count){
 		poolSizes.push_back({type, count});
 	}
+
+	void DescriptorPoolBuilder::setDevice(LogicalDevice* device){
+		this->device = device;
+	}
+
 }

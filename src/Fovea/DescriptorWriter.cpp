@@ -1,19 +1,22 @@
-#include "Fovea/core.hpp"
+
 #include "Fovea/DescriptorWriter.hpp"
 
 #include <cassert>
 
 namespace Fovea{
-	void DescriptorWriter::initialize(DescriptorSetLayout &setLayout, DescriptorPool &pool){
-		this->setLayout = &setLayout;
-		this->pool = &pool;
+	void DescriptorWriter::initialize(LogicalDevice* device, DescriptorSetLayout* setLayout, DescriptorPool* pool){
+		assert(device != nullptr && "cannot create a descriptor writer without a valid device");
+		assert(setLayout != nullptr && "cannot create a descriptor writer without a valid descriptor set layout");
+		assert(pool != nullptr && "cannot create a descriptor writer without a valid descriptor pool");
+
+		this->device = device;
+		this->setLayout = setLayout;
+		this->pool = pool;
 	}
 
 	void DescriptorWriter::writeBuffer(uint32_t binding, VkDescriptorBufferInfo *bufferInfo){
 		assert(setLayout->bindings.count(binding) == 1 && "layout does not contain specified binding");
-
 		auto &bindingDescription = setLayout->bindings[binding];
-
 		assert(bindingDescription.descriptorCount == 1 && "binding single descriptor info, but binding expects multiple");
 
 		VkWriteDescriptorSet write{};
@@ -28,9 +31,7 @@ namespace Fovea{
 
 	void DescriptorWriter::writeImage(uint32_t binding, VkDescriptorImageInfo *imageInfo){
 		assert(setLayout->bindings.count(binding) == 1 && "layout does not contain specified binding");
- 
 		auto &bindingDescription = setLayout->bindings[binding];
-
 		assert(bindingDescription.descriptorCount == 1 && "binding single descriptor info, but binding expects multiple");
 
 		VkWriteDescriptorSet write{};
@@ -45,7 +46,6 @@ namespace Fovea{
 
 	void DescriptorWriter::writeImages(uint32_t binding, uint32_t imageCount, VkDescriptorImageInfo *imageInfos){
 		assert(setLayout->bindings.count(binding) == 1 && "layout does not contain specified binding");
- 
 		auto &bindingDescription = setLayout->bindings[binding];
 
 		// assert(bindingDescription.descriptorCount == 1 && "binding single descriptor info, but binding expects multiple");
@@ -75,6 +75,6 @@ namespace Fovea{
 		for (auto &write : writes) {
 			write.dstSet = set;
 		}
-		vkUpdateDescriptorSets(getInstance().logicalDevice.getDevice(), writes.size(), writes.data(), 0, nullptr);
+		vkUpdateDescriptorSets(device->getDevice(), writes.size(), writes.data(), 0, nullptr);
 	}
 }

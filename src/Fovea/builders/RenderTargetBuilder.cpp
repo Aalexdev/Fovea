@@ -5,7 +5,6 @@ namespace Fovea{
 	void RenderTargetBuilder::setFramebuffer(Framebuffer &framebuffer){
 		fb = &framebuffer;
 	}
-
 	
 	void RenderTargetBuilder::setDepthStencilClearColor(float depth, uint32_t stencil){
 		depthClear = depth;
@@ -24,6 +23,4 @@ namespace Fovea{
 	void RenderTargetBuilder::setFramebufferBuilder(FramebufferBuilder &builder){
 		framebufferBuilder = builder;
 	}
-
-	
 }

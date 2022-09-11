@@ -5,11 +5,19 @@ namespace Fovea{
 		requiredExtensions.push_back(extension);
 	}
 
-	void LogicalDeviceBuilder::requireQueue(PhysicalDeviceFamily family){
-		requiredQueues.set(static_cast<size_t>(family));
+	void LogicalDeviceBuilder::requireQueue(VkQueueFlagBits family, uint32_t count){
+		requiredQueuesCount[static_cast<size_t>(family)] = count;
 	}
 
-	void LogicalDeviceBuilder::setQueuePriority(PhysicalDeviceFamily family, float priority){
-		queuePriorities[static_cast<size_t>(family)] = priority;
+	void LogicalDeviceBuilder::setQueuePriority(VkQueueFlagBits family, uint32_t index, float priority){
+		queuePriorities[static_cast<size_t>(family)][index] = priority;
+	}
+
+	void LogicalDeviceBuilder::setPhysicalDevice(PhysicalDevice *physicalDevice){
+		this->physicalDevice = physicalDevice;
+	}
+
+	void LogicalDeviceBuilder::setCommandPoolFlags(VkCommandPoolCreateFlags flags, QueueFamily family){
+		commandPoolFlags[family] = flags;
 	}
 }

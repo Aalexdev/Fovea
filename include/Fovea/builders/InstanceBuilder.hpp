@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../../vulkan/vulkan.h"
+#include "../enum.hpp"
 #include <string>
 #include <vector>
 
@@ -8,11 +9,7 @@ namespace Fovea{
 	class InstanceBuilder{
 		friend class Instance;
 		public:
-			enum VulkanVersion{
-				VULKAN_1_0,
-				VULKAN_1_1,
-				VULKAN_1_2
-			};
+			
 
 			void setApplicationName(const char* name);
 			void setEngineName(const char* name);

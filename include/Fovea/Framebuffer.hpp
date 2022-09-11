@@ -58,6 +58,7 @@ namespace Fovea{
 				VkDeviceMemory imageMemory;
 			};
 
+			LogicalDevice* device = nullptr;
 			CustomableMember<VkRenderPass> renderPass = VK_NULL_HANDLE;
 			VkFramebuffer framebuffer;
 			VkExtent2D extent;

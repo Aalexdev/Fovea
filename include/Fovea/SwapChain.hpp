@@ -9,6 +9,7 @@ namespace Fovea{
 		public:
 			~SwapChain();
 			SwapChain() = default;
+
 			SwapChain(std::shared_ptr<SwapChain> previous);
 			void initialize(SwapChainBuilder &builder);
 
@@ -39,6 +40,8 @@ namespace Fovea{
 			void createFramebuffers();
 			void createSyncObjects();
 			void createRenderPass();
+
+			LogicalDevice* device = nullptr;
 
 			VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &availableFormats);
 			VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR> &availablePresentModes);

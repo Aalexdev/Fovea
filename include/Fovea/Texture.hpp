@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Framebuffer.hpp"
+#include "LogicalDevice.hpp"
 #include "../vulkan/vulkan.h"
 
 #include <filesystem>
@@ -22,9 +23,9 @@ namespace Fovea{
 		public:
 			static constexpr uint32_t DEPTH_ATTACHMENT = -1;
 
-			Texture(Framebuffer &framebuffer, uint32_t attachment, TextureBuilder& builder);
-			Texture(const std::filesystem::path &path, TextureBuilder& builder);
-			Texture(VkFormat format, VkExtent2D extent, void* data, uint32_t pixelSize, TextureBuilder& builder);
+			Texture(LogicalDevice* device, Framebuffer &framebuffer, uint32_t attachment, TextureBuilder& builder);
+			Texture(LogicalDevice* device, const std::filesystem::path &path, TextureBuilder& builder);
+			Texture(LogicalDevice* device, VkFormat format, VkExtent2D extent, void* data, uint32_t pixelSize, TextureBuilder& builder);
 
 			~Texture();
 
@@ -55,6 +56,7 @@ namespace Fovea{
 				bool custom = false;
 			};
 
+			LogicalDevice* device = nullptr;
 			VkExtent2D extent;
 			VkFormat format;
 
@@ -62,6 +64,9 @@ namespace Fovea{
 			Member<VkDeviceMemory> imageMemory = VK_NULL_HANDLE;
 			Member<VkImageView> imageView = VK_NULL_HANDLE;
 			VkSampler imageSampler = VK_NULL_HANDLE;
+
+			VkFormat channelCountToVkFormat(int channel, VkImageTiling tiling, VkFormatFeatureFlags features);
+			
 	};
 }
 

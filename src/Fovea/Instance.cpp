@@ -82,14 +82,14 @@ namespace Fovea{
 		}
 
 		if (vkCreateInstance(&createInfo, nullptr, &instance) != VK_SUCCESS){
-			throw std::runtime_error("failed to create the vulkan instance");
+			throw "failed to create the vulkan instance";
 		}
 
 		checkRequiredExtensions(window);
 		setupDebugMessenger();
 
 		if (SDL_Vulkan_CreateSurface(static_cast<SDL_Window*>(window), instance, &surface) == SDL_FALSE){
-			throw std::runtime_error("failed to create the window surface : " + std::string(SDL_GetError()));
+			throw "failed to create the window surface";
 		}
 
 		validationLayers.resize(builder.validationLayers.size());
@@ -119,7 +119,7 @@ namespace Fovea{
 			}
 
 			if (!layerFound){
-				throw std::runtime_error("cannot found \"" + std::string(layerName) + "\" validation layer");
+				throw std::string("cannot found \"" + std::string(layerName) + "\" validation layer").c_str();
 			}
 		}
 	}
@@ -167,7 +167,7 @@ namespace Fovea{
 
 		for (const auto &required : requiredExtensions){
 			if (available.find(required) == available.end()){
-				throw std::runtime_error("missing required SDL2 vulkan extensions");
+				throw "missing required SDL2 vulkan extensions";
 			}
 		}
 	}
@@ -179,7 +179,7 @@ namespace Fovea{
 		setDebugMessengerCreateInfo(createInfo);
 
 		if (CreateDebugUtilsMessengerEXT(instance, &createInfo, nullptr, &debugMessenger) != VK_SUCCESS){
-			throw std::runtime_error("failed to create the debug messenger");
+			throw "failed to create the debug messenger";
 		}
 	}
 

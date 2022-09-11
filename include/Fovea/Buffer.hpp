@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../vulkan/vulkan.h"
+#include "LogicalDevice.hpp"
 
 namespace Fovea{
 	class Buffer{
@@ -12,6 +13,7 @@ namespace Fovea{
 			Buffer(const Buffer &) = delete;
 			Buffer &operator=(const Buffer &) = delete;
 
+			void initialize(LogicalDevice* device);
 			void alloc(VkDeviceSize bufferSize, VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryProperties);
 
 			void setInstanceProperties(VkDeviceSize instanceSize, VkDeviceSize minOffsetAlignement);
@@ -38,6 +40,9 @@ namespace Fovea{
 
 		private:
 			void destroy();
+
+			LogicalDevice* device;
+
 			uint32_t instanceCount;
 			VkDeviceSize instanceSize;
 

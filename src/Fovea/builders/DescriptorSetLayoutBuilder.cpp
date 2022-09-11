@@ -3,7 +3,7 @@
 #include <cassert>
 
 namespace Fovea{
-	void DescriptorSetLayoutBuilder::AddBinding(uint32_t binding, VkDescriptorType descriptorType, VkShaderStageFlags shaderStages, uint32_t count){
+	void DescriptorSetLayoutBuilder::addBinding(uint32_t binding, VkDescriptorType descriptorType, VkShaderStageFlags shaderStages, uint32_t count){
 		assert(bindings.count(binding) == 0 && "binding already used");
 
 		VkDescriptorSetLayoutBinding layout = {};
@@ -13,5 +13,9 @@ namespace Fovea{
 		layout.stageFlags = shaderStages;
 		
 		bindings[binding] = layout;
+	}
+
+	void DescriptorSetLayoutBuilder::setDevice(LogicalDevice* device){
+		this->device = device;
 	}
 }

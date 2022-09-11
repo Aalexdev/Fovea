@@ -43,10 +43,11 @@ namespace Fovea{
 
 			// store the builder for when the user want to overwrite a texture
 			DescriptorSetBuilder builder;
+			LogicalDevice* device = nullptr;
 
 			DescriptorPool pool;
 			DescriptorSetLayout layout;
-			BufferRange* buffers;
+			BufferRange* buffers = nullptr;
 			Buffer* buffer = nullptr;
 			VkDescriptorSet* sets = nullptr;
 			uint32_t descriptorSetCount = 0;

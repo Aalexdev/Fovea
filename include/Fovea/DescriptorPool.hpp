@@ -21,6 +21,7 @@ namespace Fovea{
 			VkDescriptorPool getPool();
 
 		private:
-			VkDescriptorPool pool;
+			LogicalDevice* device = nullptr;
+			VkDescriptorPool pool = VK_NULL_HANDLE;
 	};
 }

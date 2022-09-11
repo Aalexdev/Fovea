@@ -5,18 +5,24 @@
 #include <bitset>
 
 #include "PhysicalDeviceBuilder.hpp"
+#include "../PhysicalDevice.hpp"
 
 namespace Fovea{
 	class LogicalDeviceBuilder{
 		friend class LogicalDevice;
 		public:
 			void requireExtension(const char *extension);
-			void requireQueue(PhysicalDeviceFamily family);
-			void setQueuePriority(PhysicalDeviceFamily family, float priority);
+			void requireQueue(VkQueueFlagBits family, uint32_t count);
+			void setQueuePriority(VkQueueFlagBits family, uint32_t index, float priority);
+			void setPhysicalDevice(PhysicalDevice *physicalDevice);
+			void setCommandPoolFlags(VkCommandPoolCreateFlags flags, QueueFamily family);
 
 		private:
-			std::bitset<static_cast<size_t>(PhysicalDeviceFamily::FAMILY_COUNT)> requiredQueues;
-			std::array<float, static_cast<size_t>(PhysicalDeviceFamily::FAMILY_COUNT)> queuePriorities;
+			uint32_t requiredQueuesCount[FAMILY_COUNT];
+			std::vector<float> queuePriorities[FAMILY_COUNT];
+			VkCommandPoolCreateFlags commandPoolFlags[FAMILY_COUNT];
+
 			std::vector<const char*> requiredExtensions;
+			PhysicalDevice* physicalDevice = nullptr;
 	};
 }

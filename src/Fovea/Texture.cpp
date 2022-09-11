@@ -1,6 +1,7 @@
 #include "Fovea/Texture.hpp"
-#include "Fovea/core.hpp"
+#include "Fovea/Buffer.hpp"
 #include "Fovea/SingleTimeCommand.hpp"
+#include "Fovea/utils.hpp"
 
 #include <stdexcept>
 
@@ -8,7 +9,10 @@
 #include "stb/stb_image.h"
 
 namespace Fovea{
-	Texture::Texture(Framebuffer &framebuffer, uint32_t attachment, TextureBuilder& builder){
+	Texture::Texture(LogicalDevice* device, Framebuffer &framebuffer, uint32_t attachment, TextureBuilder& builder){
+		assert(device != nullptr && "cannot create a texture without a valid device");
+		this->device = device;
+
 		if (attachment == DEPTH_ATTACHMENT){
 			image = framebuffer.depthImage;
 			imageView = framebuffer.depthImageView;
@@ -56,17 +60,21 @@ namespace Fovea{
 		return DEFAULT_FORMAT_SIZE;
 	}
 
-	static inline VkFormat channelCountToVkFormat(int channel, VkImageTiling tiling, VkFormatFeatureFlags features){
+	VkFormat Texture::channelCountToVkFormat(int channel, VkImageTiling tiling, VkFormatFeatureFlags features){
 		switch (channel){
-			case 1: return getInstance().physicalDevice.findSupportedFormat(R_FORMATS, tiling, features);
-			case 2: return getInstance().physicalDevice.findSupportedFormat(RG_FORMATS, tiling, features);
-			case 3: return getInstance().physicalDevice.findSupportedFormat(RGB_FORMATS, tiling, features);
-			case 4: return getInstance().physicalDevice.findSupportedFormat(RGBA_FORMATS, tiling, features);
+			case 1: return device->getPhysicalDevice()->findSupportedFormat(R_FORMATS, tiling, features);
+			case 2: return device->getPhysicalDevice()->findSupportedFormat(RG_FORMATS, tiling, features);
+			case 3: return device->getPhysicalDevice()->findSupportedFormat(RGB_FORMATS, tiling, features);
+			case 4: return device->getPhysicalDevice()->findSupportedFormat(RGBA_FORMATS, tiling, features);
 		}
+		assert(false && "cannot found a supported texture format");
 		return VK_FORMAT_R8_UINT;
 	}
 
-	Texture::Texture(const std::filesystem::path &path, TextureBuilder& builder){
+	Texture::Texture(LogicalDevice* device, const std::filesystem::path &path, TextureBuilder& builder){
+		assert(device != nullptr && "cannot create a texture without a valid device");
+		this->device = device;
+
 		int w, h, channel;
 		void* pixels = stbi_load(path.string().c_str(), &w, &h, &channel, STBI_default);
 
@@ -86,7 +94,10 @@ namespace Fovea{
 		stbi_image_free(pixels);
 	}
 
-	Texture::Texture(VkFormat format, VkExtent2D extent, void* data, uint32_t pixelSize, TextureBuilder& builder){
+	Texture::Texture(LogicalDevice* device, VkFormat format, VkExtent2D extent, void* data, uint32_t pixelSize, TextureBuilder& builder){
+		assert(device != nullptr && "cannot create a texture without a valid device");
+		this->device = device;
+		
 		this->extent = extent;
 		this->format = format;
 
@@ -94,7 +105,7 @@ namespace Fovea{
 	}
 
 	Texture::~Texture(){
-		VkDevice device = getInstance().logicalDevice.getDevice();
+		VkDevice device = this->device->getDevice();
 		if (!image.custom) vkDestroyImage(device, image, nullptr);
 		if (!imageView.custom) vkDestroyImageView(device, imageView, nullptr);
 		if (!imageMemory.custom) vkFreeMemory(device, imageMemory, nullptr);
@@ -112,7 +123,7 @@ namespace Fovea{
 		samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
 		
 		samplerInfo.anisotropyEnable = builder.anisotropy;
-		samplerInfo.maxAnisotropy = getInstance().physicalDevice.getProperties().limits.maxSamplerAnisotropy;
+		samplerInfo.maxAnisotropy = device->getPhysicalDevice()->getProperties().limits.maxSamplerAnisotropy;
 		samplerInfo.borderColor = VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK;
 		samplerInfo.unnormalizedCoordinates = VK_FALSE;
 		samplerInfo.compareEnable = !builder.normalizeCoords;
@@ -122,8 +133,8 @@ namespace Fovea{
 		samplerInfo.minLod = 0.f;
 		samplerInfo.maxLod = 0.f;
 
-		if (vkCreateSampler(getInstance().logicalDevice.getDevice(), &samplerInfo, nullptr, &imageSampler) != VK_SUCCESS)
-			throw std::runtime_error("failed to create sampler");
+		if (vkCreateSampler(device->getDevice(), &samplerInfo, nullptr, &imageSampler) != VK_SUCCESS)
+			throw "failed to create sampler";
 	}
 
 	void Texture::createImage(TextureBuilder& builder){
@@ -146,10 +157,10 @@ namespace Fovea{
 		createInfo.flags = 0;
 		createInfo.queueFamilyIndexCount = 1;
 
-		uint32_t queueIndex = getInstance().physicalDevice.getFamily(PhysicalDeviceFamily::FAMILY_GRAPHIC).family;
+		uint32_t queueIndex = device->getPhysicalDevice()->getFamily(QueueFamily::FAMILY_GRAPHIC).family;
 		createInfo.pQueueFamilyIndices = &queueIndex;
 
-		getInstance().logicalDevice.createImageWithInfo(createInfo, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, image, imageMemory);
+		device->createImageWithInfo(createInfo, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, image, imageMemory);
 	}
 
 	void Texture::createImageView(TextureBuilder& builder){
@@ -164,8 +175,8 @@ namespace Fovea{
 		createInfo.subresourceRange.baseArrayLayer = 0;
 		createInfo.subresourceRange.layerCount = 1;
 
-		if (vkCreateImageView(getInstance().logicalDevice.getDevice(), &createInfo, nullptr, &imageView) != VK_SUCCESS){
-			throw std::runtime_error("failed to create image view");
+		if (vkCreateImageView(device->getDevice(), &createInfo, nullptr, &imageView) != VK_SUCCESS){
+			throw "failed to create image view";
 		}
 	}
 
@@ -174,6 +185,8 @@ namespace Fovea{
 		createImageView(builder);
 
 		Buffer staginBuffer;
+		staginBuffer.initialize(device);
+
 		VkDeviceSize imageSize = extent.width * extent.height * pixelSize;
 		staginBuffer.alloc(imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
 
@@ -182,9 +195,11 @@ namespace Fovea{
 		staginBuffer.flush();
 		staginBuffer.unmap();
 
-		SingleTimeCommand::transitionImageLayout(image, format, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-		SingleTimeCommand::copyBufferToImage(staginBuffer.getBuffer(), image, extent.width, extent.height);
-		SingleTimeCommand::transitionImageLayout(image, format, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+		SingleTimeCommand command(device, QueueFamily::FAMILY_GRAPHIC, 0);
+		transitionImageLayout(command.getCommandBuffer(), image, format, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+		copyBufferToImage(command.getCommandBuffer(), staginBuffer.getBuffer(), image, extent.width, extent.height);
+		transitionImageLayout(command.getCommandBuffer(), image, format, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+		command.end();
 
 		createImageSampler(builder);
 	}

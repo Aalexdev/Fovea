@@ -6,6 +6,8 @@
 #include <array>
 
 namespace Fovea{
+	class CommandPool; // create a prototype to avoid compilation error
+
 	class LogicalDevice{
 		public:
 			~LogicalDevice();
@@ -13,15 +15,27 @@ namespace Fovea{
 			void initialize(LogicalDeviceBuilder &builder);
 
 			VkDevice getDevice() const;
+			VkQueue getQueue(QueueFamily family, uint32_t index);
+			PhysicalDevice* getPhysicalDevice();
+			Instance* getInstance();
+
 
 			void createImageWithInfo(const VkImageCreateInfo &imageInfo, VkMemoryPropertyFlags properties, VkImage &image, VkDeviceMemory &imageMemory);
-
 			void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer &buffer,VkDeviceMemory &bufferMemory);
-
-			VkQueue getQueue(PhysicalDeviceFamily family);
+			CommandPool* getCommandPool(QueueFamily family);
 
 		private:
-			VkDevice device;
-			std::array<VkQueue, static_cast<size_t>(PhysicalDeviceFamily::FAMILY_COUNT)> queues;
+			void createCommandPools(LogicalDeviceBuilder &builder);
+
+			PhysicalDevice* physicalDevice = nullptr;
+			VkDevice device = VK_NULL_HANDLE;
+
+			struct QueueType{
+				VkQueue* queues = nullptr;
+				uint32_t queueCount = 0;
+			};
+
+			QueueType queues[FAMILY_COUNT];
+			CommandPool* commandPools[FAMILY_COUNT];
 	};
 }

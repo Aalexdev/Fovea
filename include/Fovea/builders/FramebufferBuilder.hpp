@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../../vulkan/vulkan.h"
+#include "../LogicalDevice.hpp"
 
 #include <vector>
 #include <initializer_list>
@@ -47,15 +48,17 @@ namespace Fovea{
 			void addAttachmentImageView(uint8_t attachmentIndex, VkImageView imageView);
 			void addRenderPass(VkRenderPass renderPass);
 			void setExtent(VkExtent2D extent);
+			void setLogicalDevice(LogicalDevice* device);
 
 			void enableDepthAttachment(VkFormat depthFormat, bool enabled = true);
 			void addDepthAttachmentImage(VkImage depthImage);
 			void addDepthAttachmentImageView(VkImageView dephtImageView);
 			
 		private:
+			LogicalDevice* device = nullptr;
 			VkExtent2D extent;
 			VkRenderPass renderPass = VK_NULL_HANDLE;
-			FramebufferAttachments attachments;
+			FramebufferAttachments attachments{};
 
 			bool depthBufferEnabled = false;
 			VkFormat depthFormat;

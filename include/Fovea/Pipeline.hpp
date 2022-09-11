@@ -1,6 +1,7 @@
 #pragma once
 
 #include "builders/PipelineBuilder.hpp"
+#include "DescriptorSet.hpp"
 
 namespace Fovea{
 	class Pipeline{
@@ -27,6 +28,8 @@ namespace Fovea{
 			void createPipelineLayout(PipelineBuilder &builder);
 			void createShaderModules(PipelineBuilder &builder);
 			void createShaderModule(const std::vector<char>& code, VkShaderModule& shaderModule);
+
+			LogicalDevice* device = nullptr;
 
 			VkPipeline pipeline = VK_NULL_HANDLE;
 			VkPipelineLayout layout = VK_NULL_HANDLE;
