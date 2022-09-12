@@ -47,10 +47,9 @@ int main(int argc, char** argv){
 			builder.requireExtension(ext);
 		}
 	}
-
-	printf("instance initialized with success !");
-
+	
 	Instance* instance = new Instance(builder);
+	printf("instance initialized with success !");
 
 	SDL_Delay(3000);
 
