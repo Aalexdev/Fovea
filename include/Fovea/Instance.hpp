@@ -6,9 +6,17 @@
 namespace Fovea{
 	class Instance{
 		public:
+			Instance() = default;
+			Instance(InstanceBuilder &builder){
+				initialize(builder);
+			}
+
 			~Instance();
 
-			void initialize(InstanceBuilder &builder, void* window);
+			Instance(const Instance &) = delete;
+			Instance& operator=(const Instance &) = delete;
+
+			void initialize(InstanceBuilder &builder);
 
 			bool isValidationLayersEnabled() const;
 			VkInstance getInstance() const;

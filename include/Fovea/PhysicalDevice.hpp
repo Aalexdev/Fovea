@@ -20,7 +20,15 @@ namespace Fovea{
 				QueueFamily type = QueueFamily::FAMILY_NONE; // used as a non intialized value
 			};
 
+			PhysicalDevice() = default;
+			PhysicalDevice(PhysicalDeviceBuidler &builder){
+				initialize(builder);
+			}
 			~PhysicalDevice();
+
+			PhysicalDevice(const PhysicalDevice &) = delete;
+			PhysicalDevice& operator=(const PhysicalDevice &) = delete;
+
 			void initialize(PhysicalDeviceBuidler &builder);
 
 			VkFormat findSupportedFormat(const std::vector<VkFormat> &candidates, VkImageTiling tiling, VkFormatFeatureFlags features);

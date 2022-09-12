@@ -47,7 +47,7 @@ namespace Fovea{
 		vkDestroyInstance(instance, nullptr);
 	}
 
-	void Instance::initialize(InstanceBuilder &builder, void* window){
+	void Instance::initialize(InstanceBuilder &builder){
 		validationLayerEnabled = builder.validationLayersEnabled;
 		if (validationLayerEnabled){
 			checkValidationLayers(builder.validationLayers);
@@ -65,7 +65,7 @@ namespace Fovea{
 		createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
 		createInfo.pApplicationInfo = &appInfo;
 
-		auto extensions = getRequiredExtensions(window);
+		auto extensions = getRequiredExtensions(builder.window);
 		createInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
 		createInfo.ppEnabledExtensionNames = extensions.data();
 
@@ -85,10 +85,10 @@ namespace Fovea{
 			throw "failed to create the vulkan instance";
 		}
 
-		checkRequiredExtensions(window);
+		checkRequiredExtensions(builder.window);
 		setupDebugMessenger();
 
-		if (SDL_Vulkan_CreateSurface(static_cast<SDL_Window*>(window), instance, &surface) == SDL_FALSE){
+		if (SDL_Vulkan_CreateSurface(static_cast<SDL_Window*>(builder.window), instance, &surface) == SDL_FALSE){
 			throw "failed to create the window surface";
 		}
 

@@ -12,12 +12,12 @@ namespace Fovea{
 			struct Descriptor{
 				friend class DescriptorSet;
 
-				uint32_t binding;
-				VkDescriptorType type;
+				uint32_t binding = 0;
+				VkDescriptorType type = VK_DESCRIPTOR_TYPE_MAX_ENUM;
 				VkPipelineStageFlags stage;
-				std::vector<VkDescriptorImageInfo> imageInfos;
-				uint32_t imageCount;
-				uint32_t bufferSize;
+				std::vector<VkDescriptorImageInfo> imageInfos{};
+				uint32_t imageCount = 0;
+				uint32_t bufferSize = 0;
 
 				private:
 					VkDescriptorBufferInfo bufferInfo;

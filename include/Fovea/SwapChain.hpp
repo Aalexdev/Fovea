@@ -8,6 +8,9 @@ namespace Fovea{
 	class SwapChain{
 		public:
 			~SwapChain();
+			SwapChain(SwapChainBuilder &builder){
+				initialize(builder);
+			}
 			SwapChain() = default;
 
 			SwapChain(std::shared_ptr<SwapChain> previous);

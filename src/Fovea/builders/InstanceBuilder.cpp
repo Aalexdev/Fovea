@@ -36,4 +36,8 @@ namespace Fovea{
 	void InstanceBuilder::enableValidationLayers(bool enabled){
 		validationLayersEnabled = enabled;
 	}
+
+	void InstanceBuilder::setWindow(void* window){
+		this->window = window;
+	}
 }

@@ -10,6 +10,9 @@ namespace Fovea{
 			SingleTimeCommand(LogicalDevice* device, QueueFamily family, uint32_t queueIndex);
 			~SingleTimeCommand();
 
+			SingleTimeCommand(const SingleTimeCommand &) = delete;
+			SingleTimeCommand& operator=(const SingleTimeCommand &) = delete;
+
 			void begin();
 			void end();
 			VkCommandBuffer getCommandBuffer();

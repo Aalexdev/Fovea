@@ -8,12 +8,13 @@ namespace Fovea{
 		friend class PipelineLibrary;
 		public:
 			Pipeline() = default;
-			Pipeline(const Pipeline &) = delete;
-
-			Pipeline(PipelineBuilder *builder);
+			Pipeline(PipelineBuilder& builder);
 			~Pipeline();
 
-			void initialize(PipelineBuilder *builder);
+			Pipeline(const Pipeline &) = delete;
+			Pipeline& operator=(const Pipeline &) = delete;
+
+			void initialize(PipelineBuilder& builder);
 			const PipelineConfigInfo& getConfig();
 			void bind(VkCommandBuffer commandBuffer, uint32_t setsIndex[]);
 			void bindPushConstant(VkCommandBuffer, void* data); 

@@ -29,6 +29,9 @@ namespace Fovea{
 
 			~Texture();
 
+			Texture(const Texture &) = delete;
+			Texture& operator=(const Texture &) = delete;
+
 			VkDescriptorImageInfo getDescriptorInfo();
 
 			VkImage getImage();

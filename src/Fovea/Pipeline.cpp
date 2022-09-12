@@ -24,7 +24,7 @@ namespace Fovea{
 		return buffer;
 	}
 
-	Pipeline::Pipeline(PipelineBuilder *builder){
+	Pipeline::Pipeline(PipelineBuilder& builder){
 		initialize(builder);
 	}
 
@@ -48,15 +48,15 @@ namespace Fovea{
 		}
 	}
 
-	void Pipeline::initialize(PipelineBuilder *builder){
-		if (builder->base){
-			refCount = builder->base->refCount;
+	void Pipeline::initialize(PipelineBuilder& builder){
+		if (builder.base){
+			refCount = builder.base->refCount;
 			(*refCount)++;
 		}
 
-		createShaderModules(*builder);
-		createPipelineLayout(*builder);
-		createGraphicPipeline(*builder);
+		createShaderModules(builder);
+		createPipelineLayout(builder);
+		createGraphicPipeline(builder);
 	}
 
 	const PipelineConfigInfo& Pipeline::getConfig(){

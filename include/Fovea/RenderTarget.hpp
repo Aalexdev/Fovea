@@ -16,6 +16,9 @@ namespace Fovea{
 
 			~RenderTarget();
 
+			RenderTarget(const RenderTarget &) = delete;
+			RenderTarget& operator=(const RenderTarget &) = delete;
+
 			void initialize(RenderTargetBuilder &builder);
 			void beginRenderPass(VkCommandBuffer commandBuffer);
 			void endRenderPass(VkCommandBuffer commandBuffer);

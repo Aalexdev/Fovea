@@ -10,7 +10,14 @@ namespace Fovea{
 
 	class LogicalDevice{
 		public:
+			LogicalDevice() = default;
+			LogicalDevice(LogicalDeviceBuilder &builder){
+				initialize(builder);
+			}
 			~LogicalDevice();
+
+			LogicalDevice(const LogicalDevice &) = delete;
+			LogicalDevice& operator=(const LogicalDevice &) = delete;
 
 			void initialize(LogicalDeviceBuilder &builder);
 
