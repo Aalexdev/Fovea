@@ -1,7 +1,6 @@
 # Fovea
 
-Fovea is a simple render engine made in c++ with a C API
-It can be used for 2D games and for some simple 3D games
+Fovea is an abstraction for vulkan to make it easier to use
 
 ## Features
 

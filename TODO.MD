@@ -1,20 +1,23 @@
 Fovea:
-	global_instances:
-		- Buffer @done
-		- CommandPool @done
-		- DescriptorPool @done
-		- DescriptorSet @done
-		- DescriptorWriter @done
-		- Framebuffer @done
-		- Instance @done
-		- LogicalDevice @done
-		- PhysicalDevice @done
-		- Pipeline @done
-		- PipelineLibrary
-		- RenderTarget @done
-		- SingleTimeCommand @done
-		- SwapChain @done
-		- Texture @done
+	tests:
+		- instance
+		- physical device
+		- logical device
+		- swapchain
+		- render target
+		
+		pipeline:
+			- default graphic pipeline
+			- push constant
+			- descriptor set
+		 
+		descriptor_set:
+			- data buffer
+			- texture buffer
+
+		buffer:
+			- static buffer
+			- dynamic buffer
 	
 	pipelines:
 		- graphic pipeline @done
