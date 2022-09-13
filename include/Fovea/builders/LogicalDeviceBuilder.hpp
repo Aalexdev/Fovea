@@ -12,8 +12,8 @@ namespace Fovea{
 		friend class LogicalDevice;
 		public:
 			void requireExtension(const char *extension);
-			void requireQueue(VkQueueFlagBits family, uint32_t count);
-			void setQueuePriority(VkQueueFlagBits family, uint32_t index, float priority);
+			void requireQueue(QueueFamily family, uint32_t count);
+			void setQueuePriority(QueueFamily family, uint32_t index, float priority);
 			void setPhysicalDevice(PhysicalDevice *physicalDevice);
 			void setCommandPoolFlags(VkCommandPoolCreateFlags flags, QueueFamily family);
 

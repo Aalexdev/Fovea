@@ -201,4 +201,9 @@ namespace Fovea{
 	CommandPool* LogicalDevice::getCommandPool(QueueFamily family){
 		return commandPools[family];
 	}
+
+	PhysicalDevice* LogicalDevice::getPhysicalDevice(){
+		return physicalDevice;
+	}
+
 }

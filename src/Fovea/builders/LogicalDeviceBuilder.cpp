@@ -5,11 +5,11 @@ namespace Fovea{
 		requiredExtensions.push_back(extension);
 	}
 
-	void LogicalDeviceBuilder::requireQueue(VkQueueFlagBits family, uint32_t count){
+	void LogicalDeviceBuilder::requireQueue(QueueFamily family, uint32_t count){
 		requiredQueuesCount[static_cast<size_t>(family)] = count;
 	}
 
-	void LogicalDeviceBuilder::setQueuePriority(VkQueueFlagBits family, uint32_t index, float priority){
+	void LogicalDeviceBuilder::setQueuePriority(QueueFamily family, uint32_t index, float priority){
 		queuePriorities[static_cast<size_t>(family)][index] = priority;
 	}
 
