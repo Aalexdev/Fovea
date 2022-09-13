@@ -16,7 +16,7 @@ namespace Fovea{
 		requiredExtensions.push_back(ext);
 	}
 
-	void PhysicalDeviceBuidler::requireFamily(VkQueueFlagBits family){
+	void PhysicalDeviceBuidler::requireFamily(QueueFamily family){
 		requiredFamilies.set(static_cast<size_t>(family));
 	}
 

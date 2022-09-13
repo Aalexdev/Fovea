@@ -13,7 +13,7 @@ namespace Fovea{
 		friend class PhysicalDevice;
 		public:
 			void requireExtension(const char* ext);
-			void requireFamily(VkQueueFlagBits family);
+			void requireFamily(QueueFamily family);
 			void requireFeature(PhysicalDeviceFeature feature);
 			void setInstance(Instance* instance);
 			

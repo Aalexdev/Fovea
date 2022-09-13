@@ -26,11 +26,7 @@ SDL_Window* initializeWindow(){
 	return window;
 }
 
-int main(int argc, char** argv){
-
-	initializeSDL();
-	SDL_Window* window = initializeWindow();
-
+Instance* createInstance(SDL_Window* window){
 	InstanceBuilder builder;
 	builder.enableValidationLayers(true);
 	builder.setWindow(window);
@@ -49,11 +45,34 @@ int main(int argc, char** argv){
 	}
 	 
 	Instance* instance = new Instance(builder);
-	printf("instance initialized with success !\n");
+	return instance;
+}
 
+PhysicalDevice* createPhysicalDevice(Instance* instance){
+	PhysicalDeviceBuidler builder;
+	builder.setInstance(instance);
+	builder.requireFamily(FAMILY_GRAPHIC);
+	builder.requireFamily(FAMILY_PRESENT);
+	builder.requireExtension(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+
+	PhysicalDevice* device = new PhysicalDevice(builder);
+	return device;
+}
+
+int main(int argc, char** argv){
+
+	initializeSDL();
+	SDL_Window* window = initializeWindow();
+
+	Instance* instance = createInstance(window);
+	PhysicalDevice* physicalDevice = createPhysicalDevice(instance);
+
+	printf("created physical device with success !\n");
 	SDL_Delay(3000);
 
+	delete physicalDevice;
 	delete instance;
+	
 	SDL_DestroyWindow(window);
 	SDL_Quit();
 
