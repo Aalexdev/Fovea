@@ -31,6 +31,7 @@ Instance* createInstance(SDL_Window* window){
 	builder.enableValidationLayers(true);
 	builder.setWindow(window);
 	builder.requireValidationLayer("VK_LAYER_KHRONOS_validation");
+	builder.enableValidationLayers();
 
 	{
 		uint32_t count = 0;
@@ -44,7 +45,15 @@ Instance* createInstance(SDL_Window* window){
 		}
 	}
 	 
-	Instance* instance = new Instance(builder);
+	Instance* instance = nullptr;
+
+	try{
+		instance =  new Instance(builder);
+	} catch (const char* err){
+		fprintf(stderr, "ERROR | instance error : %s\n", err);
+		exit(1);
+	}
+
 	return instance;
 }
 
@@ -53,9 +62,17 @@ PhysicalDevice* createPhysicalDevice(Instance* instance){
 	builder.setInstance(instance);
 	builder.requireFamily(FAMILY_GRAPHIC);
 	builder.requireFamily(FAMILY_PRESENT);
-	builder.requireExtension(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+	// builder.requireExtension(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
 
-	PhysicalDevice* device = new PhysicalDevice(builder);
+	PhysicalDevice* device = nullptr;
+	
+	try{
+		device =  new PhysicalDevice(builder);
+	} catch (const char* err){
+		fprintf(stderr, "ERROR | physical device error : %s\n", err);
+		exit(1);
+	}
+
 	return device;
 }
 
@@ -64,8 +81,17 @@ LogicalDevice* createLogicalDevice(PhysicalDevice* physicalDevice){
 	builder.setPhysicalDevice(physicalDevice);
 	builder.requireQueue(FAMILY_PRESENT, 1);
 	builder.requireQueue(FAMILY_GRAPHIC, 1);
+	builder.requireExtension(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
 	
-	LogicalDevice* device = new LogicalDevice(builder);
+	LogicalDevice* device = nullptr;
+
+	try{
+		device =  new LogicalDevice(builder);
+	} catch (const char* err){
+		fprintf(stderr, "ERROR | logical device error : %s\n", err);
+		exit(1);
+	}
+
 	return device;
 }
 
