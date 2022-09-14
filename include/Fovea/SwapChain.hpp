@@ -35,8 +35,6 @@ namespace Fovea{
 
 			SwapChainRefreshMode getRefreshMode(); 
 			VkImage getCurrentImage();
-
-		
 		private:
 			void create();
 			void createSwapchain();

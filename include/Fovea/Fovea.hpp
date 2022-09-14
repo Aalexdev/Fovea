@@ -12,6 +12,7 @@
 #include "builders/PipelineBuilder.hpp"
 #include "builders/RenderTargetBuilder.hpp"
 #include "builders/SwapChainBuilder.hpp"
+#include "builders/BasicRendererBuilder.hpp"
 
 #include "Buffer.hpp"
 #include "CommandPool.hpp"
@@ -32,5 +33,7 @@
 #include "SwapChain.hpp"
 #include "texture.hpp"
 #include "TextureLibrary.hpp"
+
+#include "BasicRenderer.hpp"
 
 #endif
