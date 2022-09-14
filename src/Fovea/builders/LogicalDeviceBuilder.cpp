@@ -7,6 +7,11 @@ namespace Fovea{
 
 	void LogicalDeviceBuilder::requireQueue(QueueFamily family, uint32_t count){
 		requiredQueuesCount[static_cast<size_t>(family)] = count;
+		queuePriorities[static_cast<size_t>(family)].resize(count);
+		
+		for (auto &p : queuePriorities[static_cast<size_t>(family)]){
+			p = 0.f;
+		}
 	}
 
 	void LogicalDeviceBuilder::setQueuePriority(QueueFamily family, uint32_t index, float priority){

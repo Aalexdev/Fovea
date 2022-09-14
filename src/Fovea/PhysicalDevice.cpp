@@ -8,7 +8,7 @@
 	if (builder.requiredFamilies[familyType] && queueFamily.queueFlags & vkFamily){ \
 		families[familyType] = i; \
 		availableFamilies.set(familyType); \
-		this->families.push_back({i, QueueFamily::familyType});\
+		this->families.push_back({i, QueueFamily::familyType, queueFamily.queueCount});\
 	}}
 
 namespace Fovea{
@@ -75,6 +75,7 @@ namespace Fovea{
 	std::array<uint32_t, FAMILY_COUNT> PhysicalDevice::getFamilies(VkPhysicalDevice physicalDevice, PhysicalDeviceBuidler &builder){
 		std::bitset<FAMILY_COUNT> availableFamilies;
 		std::array<uint32_t, FAMILY_COUNT> families;
+		families.fill(0);
 
 		// query availables queues
 		uint32_t queueFamilyCount;
@@ -100,7 +101,7 @@ namespace Fovea{
 			if (builder.requiredFamilies[FAMILY_PRESENT] && presentSupport){
 				families[FAMILY_PRESENT] = i;
 				availableFamilies.set(FAMILY_PRESENT);
-				this->families.push_back({i, QueueFamily::FAMILY_PRESENT});
+				this->families.push_back({i, QueueFamily::FAMILY_PRESENT, queueFamily.queueCount});
 			}
 
 			if (availableFamilies == builder.requiredFamilies) break;
@@ -176,6 +177,7 @@ namespace Fovea{
 		for (auto &f : families){
 			if (f.type == family) return f;
 		}
+
 		throw "failed to found the given family";
 	}
 

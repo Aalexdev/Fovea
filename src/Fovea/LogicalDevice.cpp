@@ -1,11 +1,11 @@
 #include "Fovea/LogicalDevice.hpp"
 #include "Fovea/CommandPool.hpp"
+#include "Fovea/utils.hpp"
 
 #include <stdexcept>
 #include <cassert>
 
 namespace Fovea{
-
 	struct UniqueFamily : public PhysicalDevice::FamilyDetails{
 		UniqueFamily(const PhysicalDevice::FamilyDetails &other) : PhysicalDevice::FamilyDetails(other){};
 		UniqueFamily() = default;
@@ -43,9 +43,8 @@ namespace Fovea{
 
 		for (UniqueFamily family : families){
 			bool isUnique = true;
-			queues[static_cast<size_t>(family.type)].queueCount = builder.requiredQueuesCount[static_cast<size_t>(family.type)];
-
-			family.priorities = builder.queuePriorities[static_cast<size_t>(family.type)];
+			queues[family.type].queueCount = builder.requiredQueuesCount[family.type];
+			family.priorities = builder.queuePriorities[family.type];
 
 			for (auto &uniqueFamilie : uniqueFamilies){
 				if (uniqueFamilie.family == family.family){
@@ -57,7 +56,9 @@ namespace Fovea{
 				}
 			}
 
-			if (isUnique) uniqueFamilies.push_back(family);
+			if (isUnique){
+				uniqueFamilies.push_back(family);
+			}
 		}
 
 		for (int i=0; i<FAMILY_COUNT; i++){
@@ -75,6 +76,11 @@ namespace Fovea{
 			queueCreateInfo.queueFamilyIndex = queueFamily.family;
 
 			queueCreateInfo.queueCount = static_cast<uint32_t>(queueFamily.priorities.size());
+
+			if (queueCreateInfo.queueCount > queueFamily.queueCount){
+				queueCreateInfo.queueCount = queueFamily.queueCount;
+			}
+
 			queueCreateInfo.queueFamilyIndex = queueFamily.family;
 			queueCreateInfo.pQueuePriorities = queueFamily.priorities.data();
 			
@@ -101,8 +107,10 @@ namespace Fovea{
 			createInfo.enabledLayerCount = 0;
 		}
 
-		if (vkCreateDevice(physicalDevice->getDevice(), &createInfo, nullptr, &device) != VK_SUCCESS){
-			throw "failed to create the logical device";
+		VkResult result = vkCreateDevice(physicalDevice->getDevice(), &createInfo, nullptr, &device);
+
+		if (result != VK_SUCCESS){
+			throw (std::string("failed to create device | ") + resultToStr(result)).c_str();
 		}
 
 		uint32_t queueIndices[FAMILY_COUNT];
@@ -116,11 +124,13 @@ namespace Fovea{
 			for (auto &uf : uniqueFamilies){
 				if (f.family == uf.family){
 					queueIndex = &queueIndices[static_cast<int>(uf.type)];
+					break;
 				}
 			}
 
 			for (int i=0; i<builder.requiredQueuesCount[static_cast<int>(f.type)]; i++){
-				vkGetDeviceQueue(device, f.family, *queueIndex, &queues[static_cast<size_t>(f.type)].queues[i]);
+				uint32_t id = (*queueIndex) % physicalDevice->getFamily(f.type).queueCount;
+				vkGetDeviceQueue(device, f.family, id, &queues[static_cast<size_t>(f.type)].queues[i]);
 				(*queueIndex)++;
 			}
 		}
@@ -155,12 +165,18 @@ namespace Fovea{
 		allocInfo.allocationSize = memRequirements.size;
 		allocInfo.memoryTypeIndex = physicalDevice->findMemoryType(memRequirements.memoryTypeBits, properties);
 
-		if (vkAllocateMemory(device, &allocInfo, nullptr, &imageMemory) != VK_SUCCESS) {
-			throw "failed to allocate image memory";
+		{
+			VkResult result = vkAllocateMemory(device, &allocInfo, nullptr, &imageMemory);
+			if (result != VK_SUCCESS) {
+				throw (std::string("failed to allocate image memory | ") + resultToStr(result)).c_str();
+			}
 		}
 
-		if (vkBindImageMemory(device, image, imageMemory, 0) != VK_SUCCESS) {
-			throw "failed to bind image memory";
+		{
+			VkResult result = vkBindImageMemory(device, image, imageMemory, 0);
+			if (result != VK_SUCCESS){
+				throw (std::string("failed to bind image memory | ") + resultToStr(result)).c_str();
+			}
 		}
 	}
 
@@ -171,8 +187,11 @@ namespace Fovea{
 		bufferInfo.usage = usage;
 		bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-		if (vkCreateBuffer(device, &bufferInfo, nullptr, &buffer) != VK_SUCCESS) {
-			throw "failed to create buffer";
+		{
+			VkResult result = vkCreateBuffer(device, &bufferInfo, nullptr, &buffer);
+			if (result != VK_SUCCESS){
+				throw (std::string("failed to create buffer | ") + resultToStr(result)).c_str();
+			}
 		}
 
 		VkMemoryRequirements memRequirements;
@@ -183,8 +202,11 @@ namespace Fovea{
 		allocInfo.allocationSize = memRequirements.size;
 		allocInfo.memoryTypeIndex = physicalDevice->findMemoryType(memRequirements.memoryTypeBits, properties);
 
-		if (vkAllocateMemory(device, &allocInfo, nullptr, &bufferMemory) != VK_SUCCESS) {
-			throw "failed to allocate buffer memory";
+		{
+			VkResult result = vkAllocateMemory(device, &allocInfo, nullptr, &bufferMemory);
+			if (result != VK_SUCCESS){
+				throw (std::string("failed to allocate buffer memory | ") + resultToStr(result)).c_str();
+			}
 		}
 
 		vkBindBufferMemory(device, buffer, bufferMemory, 0);

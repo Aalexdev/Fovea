@@ -18,6 +18,7 @@ namespace Fovea{
 			struct FamilyDetails{
 				uint32_t family = 0;
 				QueueFamily type = QueueFamily::FAMILY_NONE; // used as a non intialized value
+				uint32_t queueCount = 0;
 			};
 
 			PhysicalDevice() = default;
