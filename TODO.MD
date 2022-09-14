@@ -2,7 +2,7 @@ Fovea:
 	tests:
 		- instance @done
 		- physical device @done
-		- logical device
+		- logical device @done
 		- swapchain
 		- render target
 		

@@ -35,6 +35,7 @@ namespace Fovea{
 	void SwapChain::initialize(SwapChainBuilder &builder){
 		extent = builder.extent;
 		refreshType = builder.refreshMode;
+		device = builder.device;
 		
 		framebuffers.clear();
 		create();
@@ -73,7 +74,7 @@ namespace Fovea{
 		createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
 		const uint32_t graphicFamily = physicalDevice->getFamily(FAMILY_GRAPHIC).family;
-		const uint32_t presentFamily = physicalDevice->getPresentFamily();
+		const uint32_t presentFamily = physicalDevice->getFamily(FAMILY_PRESENT).family;
 
 		uint32_t queueFamilyIndices[] = {graphicFamily, presentFamily};
 
@@ -116,6 +117,7 @@ namespace Fovea{
 			FramebufferBuilder builder;
 			builder.setExtent(extent);
 			builder.addRenderPass(renderPass);
+			builder.setLogicalDevice(device);
 
 			FramebufferAttachments attachments = {
 				{.format = imageFormat, .image = images[i]}
