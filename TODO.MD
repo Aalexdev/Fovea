@@ -3,8 +3,8 @@ Fovea:
 		- instance @done
 		- physical device @done
 		- logical device @done
-		- swapchain
-		- render target
+		- swapchain @done
+		- render target 
 		
 		pipeline:
 			- default graphic pipeline
@@ -18,6 +18,10 @@ Fovea:
 		buffer:
 			- static buffer
 			- dynamic buffer
+		
+		Renderers:
+			- basic renderer
+			- batch renderer
 	
 	pipelines:
 		- graphic pipeline @done
