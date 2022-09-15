@@ -227,5 +227,4 @@ namespace Fovea{
 	PhysicalDevice* LogicalDevice::getPhysicalDevice(){
 		return physicalDevice;
 	}
-
 }

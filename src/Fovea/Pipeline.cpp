@@ -31,28 +31,17 @@ namespace Fovea{
 	Pipeline::~Pipeline(){
 		if (pipeline){
 			VkDevice device = this->device->getDevice();
-
-			bool shared = (*refCount) > 1;
-			if (!shared){
-				for (auto m : shaderModules){
-					vkDestroyShaderModule(device, m.shaderModule, nullptr);
-				}
+			for (auto m : shaderModules){
+				vkDestroyShaderModule(device, m.shaderModule, nullptr);
 			}
 
 			vkDestroyPipeline(device, pipeline, nullptr);
-			if (!shared){
-				vkDestroyPipelineLayout(device, layout, nullptr);
-			}
-
-			(*refCount)--;
+			vkDestroyPipelineLayout(device, layout, nullptr);
 		}
 	}
 
 	void Pipeline::initialize(PipelineBuilder& builder){
-		if (builder.base){
-			refCount = builder.base->refCount;
-			(*refCount)++;
-		}
+		device = builder.device;
 
 		createShaderModules(builder);
 		createPipelineLayout(builder);
@@ -171,12 +160,6 @@ namespace Fovea{
 		createInfo.renderPass = config.renderPass;
 		createInfo.subpass = 0;
 
-		if (builder.base){
-			createInfo.basePipelineHandle = builder.base->pipeline;
-		} else {
-			createInfo.basePipelineHandle = VK_NULL_HANDLE;
-		}
-
 		createInfo.basePipelineIndex = -1;
 
 		VkResult result = vkCreateGraphicsPipelines(device->getDevice(), VK_NULL_HANDLE, 1, &createInfo, nullptr, &pipeline);
@@ -189,10 +172,6 @@ namespace Fovea{
 	}
 
 	void Pipeline::createPipelineLayout(PipelineBuilder &builder){
-		if (builder.base){
-			layout = builder.base->layout;
-			return;
-		}
 
 		VkPushConstantRange range = {};
 		range.offset = 0;
@@ -263,12 +242,6 @@ namespace Fovea{
 	}
 
 	void Pipeline::createShaderModules(PipelineBuilder &builder){
-		if (builder.base){
-			shaderModules.resize(builder.base->shaderModules.size());
-			shaderModules = builder.base->shaderModules;
-			return;
-		}
-
 		std::vector<PipelineBuilder::PipelineStage> shaderStages;
 
 		for (int i=0; i<SHADER_STAGE_COUNT; i++){

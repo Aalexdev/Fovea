@@ -101,10 +101,6 @@ namespace Fovea{
 		pushConstant.binding = 0;
 	}
 
-	void PipelineBuilder::setBase(Pipeline* base){
-		this->base = base;
-	}
-
 	void PipelineBuilder::pushSet(DescriptorSet* set){
 		sets.push_back(set);
 	}
