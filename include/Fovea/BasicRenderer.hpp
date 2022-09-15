@@ -155,6 +155,10 @@ namespace Fovea::renderer{
 				clearDepthStencil = value;
 			}
 
+			VkRenderPass getSwapChainRenderPass(){
+				return swapChain->getRenderPass();
+			}
+
 		private:
 			void createCommandBuffers(){
 				commandBuffers = new VkCommandBuffer[bufferCount];

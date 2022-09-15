@@ -26,7 +26,6 @@ namespace Fovea{
 			PhysicalDevice* getPhysicalDevice();
 			Instance* getInstance();
 
-
 			void createImageWithInfo(const VkImageCreateInfo &imageInfo, VkMemoryPropertyFlags properties, VkImage &image, VkDeviceMemory &imageMemory);
 			void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer &buffer,VkDeviceMemory &bufferMemory);
 			CommandPool* getCommandPool(QueueFamily family);

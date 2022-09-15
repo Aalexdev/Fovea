@@ -40,7 +40,5 @@ namespace Fovea{
 			PipelineConfigInfo config;
 			std::vector<ShaderModule> shaderModules;
 			std::vector<DescriptorSet*> sets;
-
-			size_t *refCount = nullptr;
 	};
 }

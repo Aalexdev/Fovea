@@ -50,7 +50,6 @@ namespace Fovea{
 			void setPushConstant(size_t size, VkPipelineStageFlags stages);
 			void setRenderPass(VkRenderPass renderPass);
 			void setSubpass(uint32_t subpass);
-			void setBase(Pipeline* base);
 			void pushSet(DescriptorSet* sets);
 
 			void setVertexDescription(const PipelineVertexDescription &description);
@@ -64,8 +63,8 @@ namespace Fovea{
 			};
 
 			struct PushConstant{
-				std::size_t size;
-				VkPipelineStageFlags stages;
+				std::size_t size = 0;
+				VkPipelineStageFlags stages = 0;
 				std::uint8_t binding = 0;
 			};
 
@@ -74,7 +73,6 @@ namespace Fovea{
 
 			PipelineConfigInfo config;
 			PushConstant pushConstant;
-			Pipeline* base = nullptr;
 			std::vector<DescriptorSet*> sets{};
 
 			bool hasVertexDescription = false;
