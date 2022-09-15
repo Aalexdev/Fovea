@@ -125,6 +125,9 @@ namespace Fovea::renderer{
 				clearValues[0].depthStencil = clearDepthStencil;
 				clearValues[1].color = clearColor;
 
+				info.clearValueCount = 2;
+				info.pClearValues = clearValues;
+
 				vkCmdBeginRenderPass(commandBuffer, &info, VK_SUBPASS_CONTENTS_INLINE);
 
 				VkViewport viewport{};
@@ -142,6 +145,14 @@ namespace Fovea::renderer{
 
 			void endSwapChainRenderPass(VkCommandBuffer commandBuffer){
     			vkCmdEndRenderPass(commandBuffer);
+			}
+
+			void setClearColor(VkClearColorValue color){
+				clearColor = color;
+			}
+
+			void setClearDepthStencil(VkClearDepthStencilValue value){
+				clearDepthStencil = value;
 			}
 
 		private:
