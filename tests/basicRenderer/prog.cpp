@@ -126,6 +126,8 @@ int main(int argc, char** argv){
 	BasicRenderer* renderer = createRenderer(device);
 
 	bool launched = true;
+	VkClearColorValue clearColor;
+
 	while (launched){
 		SDL_Event e;
 		while (SDL_PollEvent(&e)){
@@ -151,6 +153,12 @@ int main(int argc, char** argv){
 		VkCommandBuffer commandBuffer = renderer->beginFrame();
 		if (commandBuffer){
 
+			clearColor.float32[0] = SDL_sinf(SDL_GetTicks64() / 1000.f);
+			clearColor.float32[1] = SDL_sinf(SDL_GetTicks64() / 2000.f);
+			clearColor.float32[2] = SDL_sinf(SDL_GetTicks64() / 3000.f);
+			clearColor.float32[3] = 1.f;
+
+			renderer->setClearColor(clearColor);
 			renderer->beginSwapChainRenderPass();
 			renderer->endSwapChainRenderPass(commandBuffer);
 
