@@ -7,7 +7,7 @@ Fovea:
 		- render target 
 		
 		pipeline:
-			- default graphic pipeline
+			- default graphic pipeline @done
 			- push constant
 			- descriptor set
 		 
@@ -20,7 +20,7 @@ Fovea:
 			- dynamic buffer
 		
 		Renderers:
-			- basic renderer
+			- basic renderer @done
 			- batch renderer
 	
 	pipelines:
