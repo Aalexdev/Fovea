@@ -5,10 +5,11 @@ Fovea:
 		- logical device @done
 		- swapchain @done
 		- render target 
+		- texture
 		
 		pipeline:
 			- default graphic pipeline @done
-			- push constant
+			- push constant @done
 			- descriptor set
 		 
 		descriptor_set:
